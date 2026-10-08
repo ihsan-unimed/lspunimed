@@ -252,7 +252,9 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 20px 0; }
 .form .row { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .form .row.r3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 640px) { .form .row, .form .row.r3 { grid-template-columns: 1fr; } }
-label.f { display: grid; gap: 6px; font-size: .88rem; font-weight: 600; color: var(--ink-2); }
+label.f { display: block; font-size: .88rem; font-weight: 600; color: var(--ink-2); }
+label.f > input, label.f > select, label.f > textarea { display: block; margin-top: 6px; }
+label.f > small { display: block; margin-top: 4px; }
 label.f .req { color: var(--red); }
 label.f small { font-weight: 400; }
 input, select, textarea { font: inherit; font-size: .95rem; width: 100%; padding: 10px 12px; border: 1px solid #c9d0da; border-radius: var(--r-sm); background: var(--white); color: var(--ink); }

@@ -1,7 +1,7 @@
 /* MODE DEMO — tiruan backend di browser. Aktif hanya jika API_URL di config.js kosong.
    Data contoh disimpan di localStorage browser ini saja. Akun demo: admin / demo12345 */
 (function () {
-  const KEY = 'sipaling_demo_db_v1';
+  const KEY = 'sipaling_demo_db_v2';
   const pad = (n, w) => String(n).padStart(w, '0');
   const now = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2) + ' ' + pad(d.getHours(), 2) + ':' + pad(d.getMinutes(), 2) + ':' + pad(d.getSeconds(), 2); };
   const plus = (days) => { const d = new Date(); d.setDate(d.getDate() + days); return d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2); };
@@ -17,14 +17,18 @@
         deskripsi: 'SIPALING LSP UNIMED adalah pusat layanan digital sertifikasi kompetensi: informasi skema, pendaftaran, verifikasi, penjadwalan, hasil uji, hingga pelacakan sertifikat — profesional, objektif, transparan, terdokumentasi, dan mampu telusur.',
         nomor_lisensi: '(contoh) BNSP-LSP-xxxx-ID', alamat: 'Jl. William Iskandar Ps. V, Medan Estate, Deli Serdang, Sumatera Utara 20221',
         email: 'lsp@unimed.ac.id', telepon: '', whatsapp: '', jam_layanan: 'Senin–Jumat, 08.00–16.00 WIB',
-        pengumuman: 'MODE DEMO — data di halaman ini adalah contoh. Seluruh informasi resmi sertifikasi dan jadwal final disampaikan melalui email yang Anda daftarkan.',
+        pengumuman: 'Pelaksanaan Uji Kompetensi perdana untuk 16 skema dilaksanakan pada Sabtu, 17 Oktober 2026. Informasi resmi dikirim ke email yang Anda daftarkan.',
         link_template_apl02: '', info_pengambilan_sertifikat: 'Sertifikat diambil di Sekretariat LSP pada jam layanan dengan membawa KTP asli. Pengambilan oleh orang lain wajib membawa surat kuasa.'
       },
-      Skema: [
-        { id_skema: 'SKM-001', kode_skema: 'CONTOH-DGM', nama_skema: 'Juru Gambar Mesin (CAD)', jenis_skema: 'Okupasi', jumlah_unit: '7', persyaratan: 'Mahasiswa aktif/alumni Pendidikan Teknik Mesin\nTelah lulus mata kuliah Gambar Teknik & CAD\nMengisi APL-01 dan APL-02', biaya: '0', link_dokumen: '', status: 'Aktif' },
-        { id_skema: 'SKM-002', kode_skema: 'CONTOH-CNC', nama_skema: 'Operator Mesin CNC Bubut', jenis_skema: 'Okupasi', jumlah_unit: '9', persyaratan: 'Telah lulus praktik pemesinan CNC\nSurat keterangan praktik/magang', biaya: '0', link_dokumen: '', status: 'Aktif' },
-        { id_skema: 'SKM-003', kode_skema: 'CONTOH-PRG', nama_skema: 'Pemrogram CAM (Mastercam)', jenis_skema: 'Klaster', jumlah_unit: '5', persyaratan: 'Telah lulus mata kuliah CAD/CAM\nPortofolio program CNC', biaya: '0', link_dokumen: '', status: 'Aktif' }
-      ],
+      Skema: Array.from({ length: 16 }, (_, i) => ({
+        id_skema: 'SKM-' + pad(i + 1, 3), kode_skema: 'SKM-UNIMED-' + pad(i + 1, 2), nama_skema: 'Skema Sertifikasi ' + pad(i + 1, 2) + ' (contoh)',
+        jenis_skema: i % 3 === 0 ? 'Klaster' : 'Okupasi', jumlah_unit: String(4 + (i % 6)),
+        persyaratan: ['Mahasiswa aktif minimal semester ' + (3 + (i % 4)) + ' atau alumni program studi terkait',
+          'Telah lulus mata kuliah pendukung skema ' + pad(i + 1, 2),
+          i % 2 ? 'Melampirkan surat keterangan magang/PKL' : 'Melampirkan sertifikat pelatihan yang relevan',
+          'Mengisi FR.APL.01 dan FR.APL.02 skema ' + pad(i + 1, 2)].join('\n'),
+        biaya: '0', link_dokumen: '', status: 'Aktif'
+      })),
       TUK: [
         { id_tuk: 'TUK-001', nama_tuk: 'TUK Sewaktu Lab. CAD FT Unimed', jenis_tuk: 'Sewaktu', alamat: 'Gedung Fakultas Teknik, Unimed', penanggung_jawab: 'Kepala Lab CAD', kontak: '', status: 'Aktif' },
         { id_tuk: 'TUK-002', nama_tuk: 'TUK Sewaktu Workshop Pemesinan', jenis_tuk: 'Sewaktu', alamat: 'Workshop Teknik Mesin, Unimed', penanggung_jawab: 'Kepala Workshop', kontak: '', status: 'Aktif' }
@@ -33,44 +37,42 @@
         { id_asesor: 'ASR-001', nama_asesor: 'Asesor Contoh A, M.T.', no_reg_met: 'MET.000.000001 2026', skema: 'SKM-001,SKM-003', email: '', hp: '', status: 'Aktif' },
         { id_asesor: 'ASR-002', nama_asesor: 'Asesor Contoh B, M.Pd.', no_reg_met: 'MET.000.000002 2026', skema: 'SKM-002', email: '', hp: '', status: 'Aktif' }
       ],
-      Jadwal: [
-        { id_jadwal: 'JDW-001', id_skema: 'SKM-001', tanggal: plus(14), waktu: '08.00–15.00 WIB', id_tuk: 'TUK-001', kuota: '20', batas_daftar: plus(7), status: 'Dibuka', keterangan: 'Batch 1' },
-        { id_jadwal: 'JDW-002', id_skema: 'SKM-002', tanggal: plus(21), waktu: '08.00–16.00 WIB', id_tuk: 'TUK-002', kuota: '10', batas_daftar: plus(12), status: 'Dibuka', keterangan: '' },
-        { id_jadwal: 'JDW-003', id_skema: 'SKM-003', tanggal: plus(-10), waktu: '08.00–14.00 WIB', id_tuk: 'TUK-001', kuota: '15', batas_daftar: plus(-20), status: 'Selesai', keterangan: '' }
-      ],
+      Jadwal: Array.from({ length: 16 }, (_, i) => ({
+        id_jadwal: 'JDW-' + pad(i + 1, 3), id_skema: 'SKM-' + pad(i + 1, 3), tanggal: '2026-10-17', waktu: '08.00 WIB – selesai',
+        id_tuk: i % 2 ? 'TUK-002' : 'TUK-001', kuota: '0', batas_daftar: '2026-10-14', status: 'Dibuka', keterangan: 'Uji kompetensi perdana'
+      })),
       Pendaftaran: [],
       Keluhan: [], Layanan: [], Survei: [], Log: [],
       Dokumen: [
-        { id_dok: 'DOK-001', nomor: 'XVII/SOP-PKS', judul: 'SOP Pelayanan Kegiatan Sertifikasi', kategori: 'SOP', link: '', status: 'Aktif' },
-        { id_dok: 'DOK-002', nomor: 'PBNSP 201', judul: 'Persyaratan Umum Lembaga Sertifikasi Profesi', kategori: 'Acuan', link: '', status: 'Aktif' },
-        { id_dok: 'DOK-003', nomor: 'PBNSP 202', judul: 'Pelaksanaan Sertifikasi Kompetensi', kategori: 'Acuan', link: '', status: 'Aktif' },
-        { id_dok: 'DOK-004', nomor: 'FR.APL.01', judul: 'Formulir Permohonan Sertifikasi Kompetensi', kategori: 'Formulir', link: '', status: 'Aktif' },
-        { id_dok: 'DOK-005', nomor: 'FR.APL.02', judul: 'Formulir Asesmen Mandiri', kategori: 'Formulir', link: '', status: 'Aktif' }
-      ],
+        { id_dok: 'DOK-001', nomor: 'XVII/SOP-PKS', judul: 'SOP Pelayanan Kegiatan Sertifikasi', kategori: 'SOP', id_skema: '', link: '', status: 'Aktif' },
+        { id_dok: 'DOK-002', nomor: 'PBNSP 201', judul: 'Persyaratan Umum Lembaga Sertifikasi Profesi', kategori: 'Acuan', id_skema: '', link: '', status: 'Aktif' },
+        { id_dok: 'DOK-003', nomor: 'PBNSP 202', judul: 'Pelaksanaan Sertifikasi Kompetensi', kategori: 'Acuan', id_skema: '', link: '', status: 'Aktif' },
+        { id_dok: 'DOK-004', nomor: 'FR.APL.01', judul: 'Formulir Permohonan Sertifikasi Kompetensi', kategori: 'Formulir', id_skema: '', link: '', status: 'Aktif' }
+      ].concat(Array.from({ length: 16 }, (_, i) => ({ id_dok: 'DOK-' + pad(5 + i, 3), nomor: 'FR.APL.02', judul: 'Asesmen Mandiri (APL-02) — Skema ' + pad(i + 1, 2), kategori: 'Formulir', id_skema: 'SKM-' + pad(i + 1, 3), link: '', status: 'Aktif' }))),
       Pengguna: [{ username: 'admin', nama: 'Administrator (Demo)', peran: 'Admin', password: 'demo12345', aktif: 'YA' }]
     };
     // contoh peserta di berbagai tahap
     const contoh = [
-      ['Andi Pratama', 'JDW-003', { status_verifikasi: 'Memenuhi Syarat', status_jadwal: 'Terjadwal', id_asesor: 'ASR-001', id_tuk: 'TUK-001', tanggal_asesmen: plus(-10), waktu_asesmen: '08.00 WIB', status_asesmen: 'Selesai', rekomendasi: 'Kompeten', tgl_hasil: plus(-8) + ' 10:00:00', status_sertifikat: 'Siap Diambil' }],
-      ['Siti Rahmawati', 'JDW-003', { status_verifikasi: 'Memenuhi Syarat', status_jadwal: 'Terjadwal', id_asesor: 'ASR-001', id_tuk: 'TUK-001', tanggal_asesmen: plus(-10), waktu_asesmen: '08.00 WIB', status_asesmen: 'Selesai', rekomendasi: 'Belum Kompeten', tgl_hasil: plus(-8) + ' 10:00:00', status_sertifikat: 'Belum Terbit' }],
-      ['Budi Santoso', 'JDW-001', { status_verifikasi: 'Memenuhi Syarat', status_jadwal: 'Terjadwal', id_asesor: 'ASR-001', id_tuk: 'TUK-001', tanggal_asesmen: plus(14), waktu_asesmen: '08.00 WIB', status_asesmen: 'Belum' }],
-      ['Dewi Lestari', 'JDW-001', { status_verifikasi: 'Menunggu Verifikasi' }],
+      ['Andi Pratama', 'JDW-001', { status_verifikasi: 'Memenuhi Syarat', status_jadwal: 'Terjadwal', id_asesor: 'ASR-001', id_tuk: 'TUK-001', tanggal_asesmen: '2026-10-17', waktu_asesmen: '08.00 WIB', status_asesmen: 'Dokumen Siap' }],
+      ['Siti Rahmawati', 'JDW-001', { status_verifikasi: 'Memenuhi Syarat', status_jadwal: 'Terjadwal', id_asesor: 'ASR-001', id_tuk: 'TUK-001', tanggal_asesmen: '2026-10-17', waktu_asesmen: '08.00 WIB' }],
+      ['Budi Santoso', 'JDW-002', { status_verifikasi: 'Memenuhi Syarat' }],
+      ['Dewi Lestari', 'JDW-003', { status_verifikasi: 'Menunggu Verifikasi' }],
       ['Rizky Hidayat', 'JDW-002', { status_verifikasi: 'Perlu Perbaikan', catatan_verifikasi: 'Transkrip belum dilegalisir.' }]
     ];
     contoh.forEach((c, i) => {
       const j = db.Jadwal.find(x => x.id_jadwal === c[1]);
       const no = 'LSPU-' + ym() + '-' + pad(i + 1, 4);
       db.Pendaftaran.push(Object.assign({
-        no_reg: no, waktu_daftar: plus(-20 + i) + ' 09:1' + i + ':00', id_jadwal: c[1], id_skema: j.id_skema, nama: c[0],
+        no_reg: no, waktu_daftar: plus(-5 + i) + ' 09:1' + i + ':00', id_jadwal: c[1], id_skema: j.id_skema, nama: c[0],
         nik: '1271' + pad(i + 1, 12), nim: '52' + pad(i + 1, 8), tempat_lahir: 'Medan', tanggal_lahir: '2003-01-0' + (i + 1), jenis_kelamin: i % 2 ? 'Perempuan' : 'Laki-laki',
         email: 'peserta' + (i + 1) + '@contoh.id', hp: '08120000000' + i, alamat: 'Medan', instansi: 'Pendidikan Teknik Mesin, Unimed', pendidikan: 'SMA/SMK', pekerjaan: 'Mahasiswa', tujuan_asesmen: 'Sertifikasi',
         file_ktp: '#', file_foto: '#', file_ijazah: '#', file_apl02: '#', file_pendukung: '',
         status_verifikasi: 'Menunggu Verifikasi', catatan_verifikasi: '', tgl_verifikasi: '', status_jadwal: 'Belum Dijadwalkan', id_asesor: '', id_tuk: '', tanggal_asesmen: '', waktu_asesmen: '',
         status_asesmen: 'Belum', catatan_asesmen: '', rekomendasi: '', tgl_hasil: '', link_surat_hasil: '', catatan_hasil: '', status_sertifikat: 'Belum Terbit', no_sertifikat: '', tgl_serah: '', penerima: '', diperbarui: now()
       }, c[2]));
-      db.Log.push({ waktu: plus(-20 + i) + ' 09:1' + i + ':00', aktor: 'publik', peran: 'Pemohon', langkah_sop: '2', aksi: 'Permohonan sertifikasi diterima (APL-01)', ref: no, detail: '' });
-      if (c[2].status_verifikasi && c[2].status_verifikasi !== 'Menunggu Verifikasi') db.Log.push({ waktu: plus(-18 + i) + ' 10:00:00', aktor: 'Administrator (Demo)', peran: 'Admin', langkah_sop: '3', aksi: 'Verifikasi persyaratan: ' + c[2].status_verifikasi, ref: no, detail: c[2].catatan_verifikasi || '' });
-      if (c[2].status_jadwal) db.Log.push({ waktu: plus(-15 + i) + ' 11:00:00', aktor: 'Administrator (Demo)', peran: 'Admin', langkah_sop: '4', aksi: 'Penjadwalan: asesor & TUK ditetapkan, jadwal disampaikan', ref: no, detail: '' });
+      db.Log.push({ waktu: plus(-5 + i) + ' 09:1' + i + ':00', aktor: 'publik', peran: 'Pemohon', langkah_sop: '2', aksi: 'Permohonan sertifikasi diterima (APL-01)', ref: no, detail: '' });
+      if (c[2].status_verifikasi && c[2].status_verifikasi !== 'Menunggu Verifikasi') db.Log.push({ waktu: plus(-4 + i) + ' 10:00:00', aktor: 'Administrator (Demo)', peran: 'Admin', langkah_sop: '3', aksi: 'Verifikasi persyaratan: ' + c[2].status_verifikasi, ref: no, detail: c[2].catatan_verifikasi || '' });
+      if (c[2].status_jadwal) db.Log.push({ waktu: plus(-3 + i) + ' 11:00:00', aktor: 'Administrator (Demo)', peran: 'Admin', langkah_sop: '4', aksi: 'Penjadwalan: asesor & TUK ditetapkan, jadwal disampaikan', ref: no, detail: '' });
       if (c[2].rekomendasi) db.Log.push({ waktu: plus(-8) + ' 10:00:00', aktor: 'Administrator (Demo)', peran: 'Admin', langkah_sop: '7', aksi: 'Hasil sertifikasi disampaikan: ' + c[2].rekomendasi, ref: no, detail: '' });
     });
     db.seq['REG'] = contoh.length;
@@ -131,7 +133,7 @@
         pengaturan: db.Pengaturan,
         skema: db.Skema.filter(r => r.status !== 'Nonaktif'),
         tuk: db.TUK.filter(r => r.status !== 'Nonaktif'),
-        jadwal: db.Jadwal.map(j => { const isi = isiJadwal(j.id_jadwal); return Object.assign({}, j, { nama_skema: (S[j.id_skema] || {}).nama_skema, kode_skema: (S[j.id_skema] || {}).kode_skema, nama_tuk: (T[j.id_tuk] || {}).nama_tuk, terisi: isi, sisa: Math.max(0, (+j.kuota || 0) - isi), bisa_daftar: buka(j, isi) }); }).sort((a, b) => a.tanggal.localeCompare(b.tanggal)),
+        jadwal: db.Jadwal.map(j => { const isi = isiJadwal(j.id_jadwal); const o = Object.assign({}, j, { nama_skema: (S[j.id_skema] || {}).nama_skema, kode_skema: (S[j.id_skema] || {}).kode_skema, nama_tuk: (T[j.id_tuk] || {}).nama_tuk, bisa_daftar: buka(j, isi) }); delete o.kuota; return o; }).sort((a, b) => a.tanggal.localeCompare(b.tanggal)),
         dokumen: db.Dokumen.filter(r => r.status !== 'Nonaktif'),
         statistik: { skema: db.Skema.length, tuk: db.TUK.length, asesor: db.Asesor.length, asesi: db.Pendaftaran.length, kompeten: db.Pendaftaran.filter(r => r.rekomendasi === 'Kompeten').length }
       };
@@ -140,6 +142,7 @@
       ['id_jadwal', 'nama', 'nik', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'email', 'hp', 'alamat', 'pendidikan', 'tujuan_asesmen'].forEach(k => { if (!String(d[k] || '').trim()) fail('Kolom "' + k.replace(/_/g, ' ') + '" wajib diisi.'); });
       if (!/^\d{16}$/.test(d.nik)) fail('NIK harus 16 digit angka.');
       if (!d.setuju) fail('Anda harus menyetujui pernyataan pendaftaran.');
+      if (!d.setuju_persyaratan) fail('Centang pernyataan bahwa Anda memenuhi persyaratan skema.');
       const j = db.Jadwal.find(x => x.id_jadwal === d.id_jadwal) || fail('Jadwal tidak ditemukan.');
       if (!buka(j, isiJadwal(j.id_jadwal))) fail('Pendaftaran untuk jadwal ini sudah ditutup atau kuota penuh.');
       const dobel = db.Pendaftaran.find(r => r.id_jadwal === d.id_jadwal && r.nik === d.nik && r.status_verifikasi !== 'Tidak Memenuhi Syarat');
@@ -154,7 +157,8 @@
       ['file_ktp', 'file_foto', 'file_ijazah', 'file_apl02', 'file_pendukung'].forEach(k => r[k] = f[k] ? '#demo-berkas' : '');
       db.Pendaftaran.push(r);
       log({ username: 'publik', peran: 'Pemohon' }, 2, 'Permohonan sertifikasi diterima (APL-01)', no, 'Jadwal ' + j.id_jadwal);
-      return { no_reg: no, nama: r.nama, tanggal: j.tanggal };
+      const sk = db.Skema.find(x => x.id_skema === j.id_skema) || {}, tk = db.TUK.find(x => x.id_tuk === j.id_tuk) || {};
+      return { no_reg: no, nama: r.nama, nik: r.nik.slice(0, 4) + '********' + r.nik.slice(-4), email: r.email, hp: r.hp, skema: sk.nama_skema, kode_skema: sk.kode_skema, tanggal: j.tanggal, waktu: j.waktu, tuk: tk.nama_tuk, waktu_daftar: r.waktu_daftar, status_verifikasi: r.status_verifikasi, email_terkirim: false };
     },
     lacak: (d) => view(cari(d.no_reg, d.email)),
     plotting: () => {

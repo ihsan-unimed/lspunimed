@@ -31,6 +31,7 @@
   };
 
   let PD = null; // data publik (cache)
+  let LAST = null; // hasil lacak terakhir
   const root = $('#view');
   let view = root;
 
@@ -96,14 +97,30 @@
   const BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   function schedItem(j) {
     const m = String(j.tanggal || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
-    const kuota = +j.kuota || 0;
-    const pct = kuota ? Math.min(100, Math.round(j.terisi / kuota * 100)) : 0;
     const status = j.bisa_daftar ? '' : badge(j.status === 'Dibuka' ? 'Ditutup' : j.status);
     return `<li>
       <div class="date">${m ? `<div class="m">${BLN[+m[2] - 1]}</div><div class="d">${+m[3]}</div><div class="y">${m[1]}</div>` : '<div class="d">?</div>'}</div>
-      <div><h3>${esc(j.nama_skema)}</h3><div class="meta"><span>${tgl(j.tanggal, true).split(',')[0]}${j.waktu ? ', ' + esc(j.waktu) : ''}</span><span>${esc(j.nama_tuk || '')}</span>${j.batas_daftar ? `<span>Daftar paling lambat ${tgl(j.batas_daftar)}</span>` : ''}</div></div>
-      <div class="end">${kuota ? `<div class="quota">${j.terisi} dari ${kuota} kursi terisi<i style="--p:${pct}%"></i></div>` : `<div class="quota">${j.terisi} pendaftar</div>`}
-        ${j.bisa_daftar ? `<a class="btn sm" href="#/daftar/${esc(j.id_jadwal)}">Daftar</a>` : status}</div></li>`;
+      <div><h3>${esc(j.nama_skema)}</h3><div class="meta"><span>${tgl(j.tanggal, true).split(',')[0]}${j.waktu ? ', ' + esc(j.waktu) : ''}</span><span>${esc(j.nama_tuk || '')}</span>${j.batas_daftar && j.bisa_daftar ? `<span>Pendaftaran dibuka sampai ${tgl(j.batas_daftar)}</span>` : ''}</div></div>
+      <div class="end"><a class="btn sm ghost" href="#/skema/${esc(j.id_skema)}">Persyaratan</a>${j.bisa_daftar ? `<a class="btn sm" href="#/daftar/${esc(j.id_jadwal)}">Daftar</a>` : status}</div></li>`;
+  }
+
+  /* ---------------- Bukti pendaftaran ---------------- */
+  function buktiRows(b) {
+    return [['No. Registrasi', b.no_reg], ['Nama', b.nama], ['NIK', b.nik], ['Email', b.email], ['Skema', b.skema + (b.kode_skema ? ' (' + b.kode_skema + ')' : '')],
+      ['Jadwal uji', tgl(b.tanggal, true) + (b.waktu ? ', ' + b.waktu : '')], ['TUK', b.tuk || '-'], ['Waktu daftar', tgl(b.waktu_daftar)], ['Status', b.status_verifikasi]];
+  }
+  function cetakBukti(b) {
+    const p = (PD && PD.pengaturan) || {};
+    const w = window.open('', '_blank');
+    if (!w) { toast('Izinkan pop-up untuk mencetak bukti.', 'bad'); return; }
+    w.document.write(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Bukti pendaftaran ${esc(b.no_reg)}</title>
+      <style>body{font-family:Arial,sans-serif;color:#000;margin:40px;font-size:14px}h1{font-size:20px;margin:0 0 4px}table{border-collapse:collapse;margin:18px 0;width:100%}td{border:1px solid #000;padding:8px 10px;vertical-align:top}td:first-child{width:34%}.no{font-size:26px;font-weight:bold;letter-spacing:1px;margin:14px 0}p{line-height:1.5}</style></head><body>
+      <h1>Bukti Pendaftaran Uji Kompetensi</h1><div>${esc(p.nama_lsp || 'LSP Universitas Negeri Medan')}</div>
+      <div class="no">${esc(b.no_reg)}</div>
+      <table>${buktiRows(b).map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td></tr>`).join('')}</table>
+      <p>Simpan bukti ini dan bawa saat asesmen bersama KTP asli. Hasil verifikasi, jadwal final, asesor, dan TUK dikirim ke email di atas dan dapat dipantau di SIPALING menu Status permohonan.</p>
+      <p>Dicetak ${tgl(new Date().toISOString().slice(0, 10))}</p><script>window.onload=function(){window.print()}<\/script></body></html>`);
+    w.document.close();
   }
 
   /* ---------------- Komponen lookup peserta ---------------- */
@@ -127,6 +144,7 @@
       out.innerHTML = loading('Mencari data…');
       try {
         const r = await api('lacak', d);
+        LAST = r;
         store.set('sipaling_lookup', JSON.stringify(d));
         out.innerHTML = render(r);
       } catch (e) { out.innerHTML = `<div class="notice bad">${esc(e.message)}</div>`; }
@@ -239,31 +257,41 @@
       </div>`;
     },
 
-    skema(D) {
+    skema(D, args) {
       const draw = (q) => {
         const list = D.skema.filter(s => !q || (s.nama_skema + ' ' + s.kode_skema).toLowerCase().indexOf(q) >= 0);
         $('#skList').innerHTML = list.length ? list.map(s => {
           const jd = D.jadwal.filter(j => j.id_skema === s.id_skema && j.bisa_daftar).length;
-          return `<div class="skema-item"><div>
+          return `<div class="skema-item" id="sk-${esc(s.id_skema)}"><div>
             ${s.kode_skema ? `<div class="code">${esc(s.kode_skema)}</div>` : ''}<h3>${esc(s.nama_skema)}</h3>
             <div class="facts"><span>${esc(s.jenis_skema || 'Skema')}</span><span>${esc(s.jumlah_unit || '-')} unit kompetensi</span><span>Biaya: ${rupiah(s.biaya)}</span></div>
-            ${s.persyaratan ? `<ul>${String(s.persyaratan).split(/\n+/).filter(String).map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>
+            ${s.persyaratan ? `<div style="margin-top:8px;font-weight:600;font-size:.9rem">Persyaratan skema</div><ul>${String(s.persyaratan).split(/\n+/).filter(String).map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>
             <div class="act"><a class="btn sm ${jd ? '' : 'ghost'}" href="#/jadwal/${esc(s.id_skema)}">${jd ? jd + ' jadwal dibuka' : 'Lihat jadwal'}</a>
+            <a class="btn sm ghost" href="#/dokumen/${esc(s.id_skema)}">${icon('file')} Formulir skema</a>
             ${s.link_dokumen ? `<a class="btn sm ghost" href="${esc(s.link_dokumen)}" target="_blank" rel="noopener">${icon('download')} Dokumen skema</a>` : ''}</div></div>`;
         }).join('') : '<div class="empty">Tidak ada skema dengan kata kunci tersebut.</div>';
       };
       view.innerHTML = `<div class="toolbar"><input id="skQ" placeholder="Cari nama atau kode skema" aria-label="Cari skema"><span class="muted">${D.skema.length} skema</span></div><div class="skema-list" id="skList"></div>`;
       $('#skQ').oninput = (e) => draw(e.target.value.toLowerCase().trim());
       draw('');
+      if (args && args[0]) { const el = document.getElementById('sk-' + args[0]); if (el) { el.scrollIntoView({ block: 'start' }); el.style.background = 'var(--red-soft)'; } }
     },
 
-    dokumen(D) {
-      const kat = {};
-      D.dokumen.forEach(d => (kat[d.kategori || 'Lainnya'] = kat[d.kategori || 'Lainnya'] || []).push(d));
-      view.innerHTML = `<div class="notice info">Dokumen mutu dan acuan yang menjadi dasar pelayanan sertifikasi LSP. Formulir dapat diunduh bila tautan tersedia.</div>` +
-        Object.keys(kat).map(k => `<div class="card"><h3>${esc(k)}</h3><div class="table-wrap"><table><thead><tr><th style="width:200px">Nomor</th><th>Judul</th><th style="width:120px"></th></tr></thead><tbody>
-          ${kat[k].map(d => `<tr><td class="mono">${esc(d.nomor)}</td><td>${esc(d.judul)}</td><td>${d.link ? `<a class="btn sm ghost" target="_blank" rel="noopener" href="${esc(d.link)}">Buka</a>` : '<small class="muted">—</small>'}</td></tr>`).join('')}
-        </tbody></table></div></div>`).join('');
+    dokumen(D, args) {
+      const pre = args[0] || '';
+      const nmS = (id) => (D.skema.find(x => x.id_skema === id) || {}).nama_skema || id;
+      view.innerHTML = `<div class="toolbar"><label class="f" style="flex:1 1 320px">Tampilkan formulir untuk skema
+        <select id="dkS"><option value="">Semua skema</option>${D.skema.map(s => `<option value="${esc(s.id_skema)}" ${pre === s.id_skema ? 'selected' : ''}>${esc(s.nama_skema)}</option>`).join('')}</select></label></div><div id="dkL"></div>`;
+      const draw = () => {
+        const s = $('#dkS').value;
+        const list = D.dokumen.filter(d => !s || !d.id_skema || d.id_skema === s);
+        const kat = {};
+        list.forEach(d => (kat[d.kategori || 'Lainnya'] = kat[d.kategori || 'Lainnya'] || []).push(d));
+        $('#dkL').innerHTML = Object.keys(kat).map(k => `<div class="section-title" style="margin-top:18px"><h2>${esc(k)}</h2></div><div class="table-wrap"><table><thead><tr><th style="width:170px">Nomor</th><th>Judul</th><th style="width:30%">Berlaku untuk</th><th style="width:90px"></th></tr></thead><tbody>
+          ${kat[k].map(d => `<tr><td class="mono">${esc(d.nomor)}</td><td>${esc(d.judul)}</td><td>${d.id_skema ? esc(nmS(d.id_skema)) : '<span class="muted">Semua skema</span>'}</td><td>${d.link ? `<a class="btn sm ghost" target="_blank" rel="noopener" href="${esc(d.link)}">Unduh</a>` : '<small class="muted">Segera</small>'}</td></tr>`).join('')}
+        </tbody></table></div>`).join('') || '<div class="empty">Belum ada dokumen.</div>';
+      };
+      $('#dkS').onchange = draw; draw();
     },
 
     jadwal(D, args) {
@@ -286,12 +314,14 @@
       if (!j) { view.innerHTML = '<div class="notice bad">Jadwal tidak ditemukan.</div><a class="btn ghost" href="#/jadwal">Kembali ke jadwal</a>'; return; }
       if (!j.bisa_daftar) { view.innerHTML = '<div class="notice bad">Pendaftaran untuk jadwal ini sudah ditutup atau kuota penuh.</div><a class="btn ghost" href="#/jadwal">Pilih jadwal lain</a>'; return; }
       const sk = D.skema.find(s => s.id_skema === j.id_skema) || {};
-      const apl02 = D.pengaturan.link_template_apl02;
+      const apl = D.dokumen.find(x => x.id_skema === j.id_skema && /APL.?02/i.test(x.nomor + ' ' + x.judul) && x.link);
+      const apl02 = apl ? apl.link : D.pengaturan.link_template_apl02;
+      const syarat = String(sk.persyaratan || '').split(/\n+/).map(x => x.trim()).filter(String);
       const file = (name, label, req, hint) => `<label class="f">${label} ${req ? '<span class="req">*</span>' : ''}<input type="file" name="${name}" accept=".pdf,.jpg,.jpeg,.png" ${req ? 'required' : ''}><small class="muted">${hint || 'PDF/JPG/PNG, maks. ' + (CFG.MAX_FILE_MB || 2) + ' MB'}</small></label>`;
       view.innerHTML = `
       <div class="card"><div class="card-head"><div><small class="muted">Jadwal dipilih</small><h2 style="margin:0">${esc(j.nama_skema)}</h2></div><a class="btn sm ghost" href="#/jadwal">Ganti jadwal</a></div>
         <dl class="kv"><dt>Tanggal</dt><dd>${tgl(j.tanggal, true)} ${esc(j.waktu || '')}</dd><dt>TUK</dt><dd>${esc(j.nama_tuk || '')}</dd><dt>Batas pendaftaran</dt><dd>${tgl(j.batas_daftar)}</dd>
-        ${sk.persyaratan ? `<dt>Persyaratan</dt><dd style="font-weight:500">${esc(sk.persyaratan).replace(/\n/g, '<br>')}</dd>` : ''}</dl></div>
+        </dl></div>
       <form class="card form" id="fDaftar" novalidate>
         <h2>Formulir Permohonan Sertifikasi (APL-01)</h2>
         <fieldset><legend>Data pribadi</legend><div class="form">
@@ -312,10 +342,15 @@
           <label class="f">Pekerjaan / jabatan<input name="pekerjaan" placeholder="mis. Mahasiswa"></label></div>
           <label class="f">Tujuan asesmen <span class="req">*</span><select name="tujuan_asesmen" required><option value="">Pilih…</option><option>Sertifikasi</option><option>Sertifikasi Ulang</option><option>Pengakuan Kompetensi Terkini (PKT)</option><option>Rekognisi Pembelajaran Lampau (RPL)</option><option>Lainnya</option></select></label>
         </div></fieldset>
+        <fieldset><legend>Persyaratan skema ${esc(sk.kode_skema || '')}</legend><div class="form">
+          ${syarat.length ? `<ul style="margin:0;padding-left:20px">${syarat.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="muted" style="margin:0">Persyaratan skema belum diisi oleh LSP.</p>'}
+          <label class="check"><input type="checkbox" name="setuju_persyaratan"> <span>Saya memenuhi seluruh persyaratan skema di atas dan melampirkan buktinya.</span></label>
+          <p class="muted" style="margin:0">Formulir khusus skema ini tersedia di <a href="#/dokumen/${esc(j.id_skema)}" target="_blank">Dokumen mutu</a>.</p>
+        </div></fieldset>
         <fieldset><legend>Dokumen persyaratan</legend><div class="form">
           <div class="row">${file('file_ktp', 'Scan KTP', true)}${file('file_foto', 'Pas foto berwarna', true, 'JPG/PNG latar merah/biru, maks. ' + (CFG.MAX_FILE_MB || 2) + ' MB')}</div>
           <div class="row">${file('file_ijazah', 'Ijazah / transkrip / KHS', false)}${file('file_apl02', 'APL-02 (asesmen mandiri) yang telah diisi', false, apl02 ? `Unduh template: <a href="${esc(apl02)}" target="_blank" rel="noopener">FR.APL.02</a>` : '')}</div>
-          ${file('file_pendukung', 'Bukti pendukung lain (sertifikat pelatihan, surat magang, portofolio)', false, 'Gabungkan dalam satu PDF, maks. ' + (CFG.MAX_FILE_MB || 2) + ' MB')}
+          ${file('file_pendukung', 'Bukti persyaratan skema (sertifikat pelatihan, surat magang, portofolio, dll.)', false, 'Gabungkan dalam satu PDF, maks. ' + (CFG.MAX_FILE_MB || 2) + ' MB')}
         </div></fieldset>
         <label class="check"><input type="checkbox" name="setuju"> <span>Saya menyatakan data dan dokumen yang saya sampaikan benar. Saya bersedia mengikuti asesmen sesuai ketentuan LSP dan memahami bahwa data saya dijaga kerahasiaannya.</span></label>
         <div><button class="btn gold" type="submit">${icon('send')} Kirim permohonan</button></div>
@@ -336,12 +371,13 @@
             const r = await api('daftar', d);
             store.set('sipaling_lookup', JSON.stringify({ no_reg: r.no_reg, email: d.email.toLowerCase() }));
             PD = null;
-            view.innerHTML = `<div class="card"><div class="ticket"><div class="muted">Permohonan diterima. Nomor Registrasi Anda:</div>
+            view.innerHTML = `<div class="card"><div class="ticket"><div class="muted">Permohonan diterima. Nomor registrasi Anda:</div>
               <div class="no mono">${esc(r.no_reg)}</div><button class="btn sm ghost" id="cp">Salin nomor</button></div>
-              <div class="notice ok" style="margin-top:16px">Simpan nomor ini. Gunakan bersama email Anda untuk memantau verifikasi, jadwal, hasil, dan sertifikat.
-              Berkas Anda akan diverifikasi oleh Bagian Sertifikasi (Langkah 3 SOP).</div>
-              <a class="btn" href="#/status">${icon('search')} Pantau status pendaftaran</a></div>`;
+              <dl class="kv" style="margin:18px 0">${buktiRows(r).slice(1).map(x => `<dt>${esc(x[0])}</dt><dd>${esc(x[1])}</dd>`).join('')}</dl>
+              <div class="notice ok">${r.email_terkirim ? 'Bukti pendaftaran juga sudah dikirim ke <b>' + esc(r.email) + '</b>.' : 'Simpan nomor registrasi ini.'} Berkas Anda akan diverifikasi oleh Bagian Sertifikasi; hasilnya dikirim ke email dan tampil di Status permohonan.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="pb">${icon('print')} Cetak / simpan PDF bukti</button><a class="btn ghost" href="#/status">${icon('search')} Pantau status</a></div></div>`;
             $('#cp').onclick = () => copy(r.no_reg);
+            $('#pb').onclick = () => cetakBukti(r);
           } catch (err) { out.innerHTML = `<div class="notice bad">${esc(err.message)}</div>`; }
         });
       });
@@ -349,9 +385,10 @@
 
     status() {
       view.innerHTML = lookupForm('lkS', 'Cek status pendaftaran', 'Cek status');
+      view.addEventListener('click', (e) => { if (e.target.closest('[data-bukti]') && LAST) cetakBukti({ no_reg: LAST.no_reg, nama: LAST.nama, nik: LAST.nik, email: LAST.email, skema: LAST.skema, kode_skema: LAST.kode_skema, tanggal: LAST.jadwal_tanggal, waktu: LAST.jadwal_waktu, tuk: LAST.tuk, waktu_daftar: LAST.waktu_daftar, status_verifikasi: LAST.status_verifikasi }); });
       bindLookup('lkS', r => `
         <div class="grid g2">
-          <div class="card"><h3>Data permohonan</h3>${identitas(r)}
+          <div class="card"><div class="card-head"><h3>Data permohonan</h3><button class="btn sm ghost" data-bukti>${icon('print')} Cetak bukti</button></div>${identitas(r)}
             ${r.status_verifikasi === 'Perlu Perbaikan' ? `<div class="notice" style="margin-top:14px"><b>Perlu perbaikan:</b> ${esc(r.catatan_verifikasi || 'Hubungi Sekretariat LSP.')}<br><small>Kirim dokumen perbaikan ke email LSP dengan menyebutkan No. Registrasi.</small></div>` : ''}
             ${r.status_verifikasi === 'Tidak Memenuhi Syarat' ? `<div class="notice bad" style="margin-top:14px"><b>Tidak memenuhi syarat.</b> ${esc(r.catatan_verifikasi || '')}</div>` : ''}
             ${r.status_jadwal === 'Terjadwal' ? `<div class="notice info" style="margin-top:14px"><b>Jadwal asesmen:</b> ${tgl(r.tanggal_asesmen, true)} ${esc(r.waktu_asesmen || '')}<br>TUK: ${esc(r.tuk)}${r.tuk_alamat ? ' — ' + esc(r.tuk_alamat) : ''}<br>Asesor: ${esc(r.asesor)}</div>` : ''}

@@ -43,7 +43,7 @@ const SHEETS = {
   Keluhan: ['no_tiket', 'waktu', 'nama', 'email', 'hp', 'no_reg', 'kategori', 'isi', 'status', 'tindak_lanjut', 'tgl_selesai', 'petugas'],
   Layanan: ['no_layanan', 'waktu', 'jenis', 'nama', 'email', 'hp', 'no_reg', 'no_sertifikat', 'skema', 'keterangan', 'file', 'status', 'catatan_petugas', 'tgl_selesai', 'petugas'],
   Survei: ['waktu', 'no_reg', 'skor_informasi', 'skor_administrasi', 'skor_asesmen', 'skor_petugas', 'skor_keseluruhan', 'saran'],
-  Dokumen: ['id_dok', 'nomor', 'judul', 'kategori', 'link', 'status'],
+  Dokumen: ['id_dok', 'nomor', 'judul', 'kategori', 'id_skema', 'link', 'status'],
   Log: ['waktu', 'aktor', 'peran', 'langkah_sop', 'aksi', 'ref', 'detail'],
   Pengguna: ['username', 'nama', 'peran', 'salt', 'password_hash', 'aktif']
 };
@@ -134,14 +134,14 @@ const PUBLIC = {
     const jadwal = rows_('Jadwal').map(r => {
       const kuota = Number(r.kuota) || 0;
       const isi = terisi[r.id_jadwal] || 0;
-      return Object.assign(strip_(r), {
+      const out = Object.assign(strip_(r), {
         nama_skema: (mapSkema[r.id_skema] || {}).nama_skema || r.id_skema,
         kode_skema: (mapSkema[r.id_skema] || {}).kode_skema || '',
         nama_tuk: (mapTuk[r.id_tuk] || {}).nama_tuk || r.id_tuk,
-        terisi: isi,
-        sisa: Math.max(0, kuota - isi),
         bisa_daftar: jadwalBuka_(r, isi)
       });
+      delete out.kuota; // kuota tidak ditampilkan ke publik
+      return out;
     }).sort((a, b) => String(a.tanggal).localeCompare(String(b.tanggal)));
 
     const dokumen = rows_('Dokumen').filter(r => r.status !== 'Nonaktif').map(strip_);
@@ -167,6 +167,7 @@ const PUBLIC = {
     if (!/^\d{16}$/.test(String(d.nik).trim())) throw new Error('NIK harus 16 digit angka.');
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(d.email).trim())) throw new Error('Format email tidak valid.');
     if (!d.setuju) throw new Error('Anda harus menyetujui pernyataan pendaftaran.');
+    if (!d.setuju_persyaratan) throw new Error('Centang pernyataan bahwa Anda memenuhi persyaratan skema.');
 
     return withLock_(() => {
       const jadwal = rows_('Jadwal').find(r => r.id_jadwal === d.id_jadwal);
@@ -199,7 +200,15 @@ const PUBLIC = {
       log_({ username: 'publik', peran: 'Pemohon' }, 2, 'Permohonan sertifikasi diterima (APL-01)', noReg,
         'Jadwal ' + jadwal.id_jadwal + ' · ' + Object.keys(simpan).length + ' berkas');
       invalidate_();
-      return { no_reg: noReg, nama: row.nama, tanggal: jadwal.tanggal };
+      const sk = rows_('Skema').find(x => x.id_skema === jadwal.id_skema) || {};
+      const tk = rows_('TUK').find(x => x.id_tuk === jadwal.id_tuk) || {};
+      const bukti = {
+        no_reg: noReg, nama: row.nama, nik: row.nik.slice(0, 4) + '********' + row.nik.slice(-4), email: row.email, hp: row.hp,
+        skema: sk.nama_skema || jadwal.id_skema, kode_skema: sk.kode_skema || '', tanggal: jadwal.tanggal, waktu: jadwal.waktu,
+        tuk: tk.nama_tuk || '', waktu_daftar: row.waktu_daftar, status_verifikasi: row.status_verifikasi
+      };
+      bukti.email_terkirim = notify_(row.email, 'Bukti pendaftaran uji kompetensi ' + noReg, buktiHtml_(bukti));
+      return bukti;
     });
   },
 
@@ -384,6 +393,11 @@ const ADMIN = {
         regs.forEach(no => {
           update_('Pendaftaran', no, patch);
           log_(u, T.langkah, T.aksi(v), no, T.detail ? T.detail(v) : '');
+          if (T.email) {
+            const r = rows_('Pendaftaran').find(x => x.no_reg === no);
+            const msg = r && T.email(Object.assign({}, r, patch));
+            if (msg) notify_(r.email, msg.subjek + ' — ' + no, emailHtml_(r, msg.isi));
+          }
         });
         invalidate_();
         return { diperbarui: regs.length };
@@ -508,6 +522,11 @@ const TAHAP = {
     fields: ['status_verifikasi', 'catatan_verifikasi'],
     validate: v => { if (ST.VERIF.indexOf(v.status_verifikasi) < 0) throw new Error('Status verifikasi tidak valid.'); },
     auto: () => ({ tgl_verifikasi: now_() }),
+    email: r => r.status_verifikasi === 'Menunggu Verifikasi' ? null : {
+      subjek: 'Hasil verifikasi persyaratan: ' + r.status_verifikasi,
+      isi: 'Hasil verifikasi persyaratan Anda: <b>' + esc_(r.status_verifikasi) + '</b>.' + (r.catatan_verifikasi ? '<br>Catatan petugas: ' + esc_(r.catatan_verifikasi) : '') +
+        (r.status_verifikasi === 'Memenuhi Syarat' ? '<br>Jadwal, asesor, dan TUK akan disampaikan melalui email berikutnya.' : '')
+    },
     aksi: v => 'Verifikasi persyaratan: ' + v.status_verifikasi,
     detail: v => v.catatan_verifikasi || ''
   },
@@ -516,6 +535,12 @@ const TAHAP = {
     fields: ['id_asesor', 'id_tuk', 'tanggal_asesmen', 'waktu_asesmen'],
     validate: v => { if (!v.id_asesor || !v.id_tuk || !v.tanggal_asesmen) throw new Error('Asesor, TUK, dan tanggal wajib diisi.'); },
     auto: () => ({ status_jadwal: 'Terjadwal' }),
+    email: r => ({
+      subjek: 'Jadwal asesmen kompetensi',
+      isi: 'Jadwal asesmen Anda telah ditetapkan:<br>Tanggal: <b>' + esc_(r.tanggal_asesmen) + ' ' + esc_(r.waktu_asesmen || '') + '</b><br>TUK: ' +
+        esc_(namaDari_('TUK', 'id_tuk', r.id_tuk, 'nama_tuk')) + '<br>Asesor: ' + esc_(namaDari_('Asesor', 'id_asesor', r.id_asesor, 'nama_asesor')) +
+        '<br>Hadir 30 menit sebelum asesmen dengan membawa KTP asli dan bukti pendaftaran.'
+    }),
     aksi: () => 'Penjadwalan: asesor & TUK ditetapkan, jadwal disampaikan',
     detail: v => v.id_asesor + ' · ' + v.id_tuk + ' · ' + v.tanggal_asesmen + ' ' + (v.waktu_asesmen || '')
   },
@@ -533,6 +558,11 @@ const TAHAP = {
     fields: ['rekomendasi', 'link_surat_hasil', 'catatan_hasil'],
     validate: v => { if (['Kompeten', 'Belum Kompeten'].indexOf(v.rekomendasi) < 0) throw new Error('Pilih Kompeten / Belum Kompeten.'); },
     auto: v => ({ tgl_hasil: now_(), status_asesmen: 'Selesai', status_sertifikat: v.rekomendasi === 'Kompeten' ? 'Diajukan ke BNSP' : 'Belum Terbit' }),
+    email: r => ({
+      subjek: 'Pemberitahuan hasil sertifikasi',
+      isi: 'Keputusan sertifikasi Anda: <b>' + esc_(r.rekomendasi.toUpperCase()) + '</b>.' + (r.link_surat_hasil ? '<br>Surat pemberitahuan hasil: <a href="' + esc_(r.link_surat_hasil) + '">unduh di sini</a>.' : '') +
+        '<br>Apabila tidak sepakat dengan keputusan ini, Anda berhak mengajukan banding melalui menu Banding Asesmen di SIPALING.'
+    }),
     aksi: v => 'Hasil sertifikasi disampaikan: ' + v.rekomendasi,
     detail: v => v.catatan_hasil || ''
   },
@@ -541,6 +571,10 @@ const TAHAP = {
     fields: ['status_sertifikat', 'no_sertifikat', 'penerima'],
     validate: v => { if (ST.SERT.indexOf(v.status_sertifikat) < 0) throw new Error('Status sertifikat tidak valid.'); },
     auto: v => (v.status_sertifikat === 'Sudah Diserahkan' ? { tgl_serah: now_() } : {}),
+    email: r => r.status_sertifikat !== 'Siap Diambil' ? null : {
+      subjek: 'Sertifikat kompetensi siap diambil',
+      isi: 'Sertifikat kompetensi Anda' + (r.no_sertifikat ? ' (No. ' + esc_(r.no_sertifikat) + ')' : '') + ' sudah dapat diambil. ' + esc_(settings_().info_pengambilan_sertifikat || '')
+    },
     aksi: v => 'Sertifikat: ' + v.status_sertifikat,
     detail: v => [v.no_sertifikat, v.penerima ? 'diterima oleh ' + v.penerima : ''].filter(String).join(' · ')
   },
@@ -627,6 +661,7 @@ function seed_() {
       ['jam_layanan', 'Senin–Jumat, 08.00–16.00 WIB', ''],
       ['pengumuman', 'Seluruh informasi resmi sertifikasi, pengumuman, dan jadwal final disampaikan melalui email yang Anda daftarkan. Pastikan email aktif.', ''],
       ['link_template_apl02', '', 'Link unduhan template APL-02 (Google Drive)'],
+      ['kirim_email', 'YA', 'YA = kirim email otomatis ke peserta (bukti daftar, verifikasi, jadwal, hasil, sertifikat)'],
       ['info_pengambilan_sertifikat', 'Sertifikat diambil di Sekretariat LSP pada jam layanan dengan membawa KTP asli. Pengambilan oleh orang lain wajib membawa surat kuasa.', '']
     ].forEach(r => append_('Pengaturan', { kunci: r[0], nilai: r[1], keterangan: r[2] }));
   }
@@ -639,7 +674,7 @@ function seed_() {
       ['ISO/IEC 17024:2012', 'Conformity Assessment – General Requirements for Bodies Operating Certification of Persons', 'Acuan'],
       ['FR.APL.01', 'Formulir Permohonan Sertifikasi Kompetensi', 'Formulir'],
       ['FR.APL.02', 'Formulir Asesmen Mandiri', 'Formulir']
-    ].forEach((r, i) => append_('Dokumen', { id_dok: 'DOK-' + pad_(i + 1, 3), nomor: r[0], judul: r[1], kategori: r[2], link: '', status: 'Aktif' }));
+    ].forEach((r, i) => append_('Dokumen', { id_dok: 'DOK-' + pad_(i + 1, 3), nomor: r[0], judul: r[1], kategori: r[2], id_skema: '', link: '', status: 'Aktif' }));
   }
   if (!rows_('Skema').length) {
     append_('Skema', { id_skema: 'SKM-001', kode_skema: 'CONTOH-001', nama_skema: '(Contoh) Skema Sertifikasi — ganti dengan skema resmi', jenis_skema: 'Okupasi', jumlah_unit: '8', persyaratan: 'Mahasiswa aktif / alumni\nTelah lulus mata kuliah terkait\nMengisi APL-01 dan APL-02', biaya: '0', link_dokumen: '', status: 'Aktif' });
@@ -845,4 +880,40 @@ function uploadRoot_() {
   const f = DriveApp.createFolder('SIPALING_UPLOADS');
   props.setProperty('upload_root', f.getId());
   return f;
+}
+
+/* ============================ EMAIL ============================ */
+
+function esc_(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function namaDari_(sheet, key, id, field) { const r = rows_(sheet).find(x => x[key] === id); return r ? r[field] : (id || '-'); }
+
+/** Kirim email bila Pengaturan kirim_email = YA. Kegagalan email tidak menggagalkan transaksi. */
+function notify_(to, subject, html) {
+  try {
+    if (String(settings_().kirim_email || 'YA').toUpperCase() !== 'YA' || !to) return false;
+    if (MailApp.getRemainingDailyQuota() < 1) return false;
+    const set = settings_();
+    MailApp.sendEmail({ to: to, subject: '[' + (set.nama_singkat || 'LSP UNIMED') + '] ' + subject, htmlBody: html, name: set.nama_lsp || 'LSP UNIMED', replyTo: set.email || undefined });
+    return true;
+  } catch (e) { return false; }
+}
+
+function emailHtml_(r, isi) {
+  const set = settings_();
+  return '<div style="font-family:Arial,sans-serif;font-size:14px;color:#000;max-width:560px">' +
+    '<p>Yth. ' + esc_(r.nama) + ',</p><p>' + isi + '</p>' +
+    '<p>No. Registrasi: <b>' + esc_(r.no_reg) + '</b><br>Pantau status Anda di SIPALING menggunakan No. Registrasi dan email ini.</p>' +
+    '<p>Hormat kami,<br>' + esc_(set.nama_lsp || 'LSP Universitas Negeri Medan') + '</p></div>';
+}
+
+function buktiHtml_(b) {
+  const set = settings_();
+  const row = (k, v) => '<tr><td style="padding:4px 12px 4px 0;color:#000">' + k + '</td><td style="padding:4px 0;color:#000"><b>' + esc_(v) + '</b></td></tr>';
+  return '<div style="font-family:Arial,sans-serif;font-size:14px;color:#000;max-width:560px">' +
+    '<p>Yth. ' + esc_(b.nama) + ',</p><p>Permohonan sertifikasi kompetensi Anda telah kami terima. Simpan email ini sebagai <b>bukti pendaftaran</b>.</p>' +
+    '<table style="border-collapse:collapse">' + row('No. Registrasi', b.no_reg) + row('Nama', b.nama) + row('NIK', b.nik) + row('Skema', b.skema) +
+    row('Jadwal uji', b.tanggal + ' ' + (b.waktu || '')) + row('TUK', b.tuk) + row('Waktu daftar', b.waktu_daftar) + row('Status', b.status_verifikasi) + '</table>' +
+    '<p>Langkah berikutnya: dokumen Anda diverifikasi oleh Bagian Sertifikasi. Hasil verifikasi, jadwal final, asesor, dan TUK akan dikirim ke email ini dan dapat dipantau di SIPALING menu Status Permohonan.</p>' +
+    '<p>Hormat kami,<br>' + esc_(set.nama_lsp || 'LSP Universitas Negeri Medan') + '</p></div>';
 }

@@ -46,22 +46,27 @@ backend/appsscript.json ← manifest (opsional)
 
 ---
 
-## 3. Memasang backend (Apps Script)
+## 3. Memasang backend (Excel → Google Sheets → Apps Script)
 
-1. Buat **Google Spreadsheet** baru dengan akun LSP, misalnya bernama `DB SIPALING LSP UNIMED`.
-2. Buka menu **Ekstensi → Apps Script**. Hapus isi `Code.gs`, lalu tempel seluruh isi `backend/Code.gs`.
-3. *(Opsional)* Buka **Setelan proyek → Tampilkan file manifes**, lalu ganti isi `appsscript.json` dengan `backend/appsscript.json`.
-4. Pilih fungsi **`setup`**, lalu klik **Jalankan**. Berikan izin akses (Spreadsheet & Drive) saat diminta.
-   - Fungsi ini membuat 12 sheet: Pengaturan, Skema, TUK, Asesor, Jadwal, Pendaftaran, Keluhan, Layanan, Survei, Dokumen, Log, Pengguna.
-   - **Password awal akun `admin`** tampil di **Log eksekusi** (dan pop-up di spreadsheet). Catat password ini.
-5. Klik **Terapkan → Deployment baru → Jenis: Aplikasi web**.
-   - *Jalankan sebagai*: **Saya**
-   - *Yang memiliki akses*: **Siapa saja**
-6. Salin **URL Aplikasi web** (berakhiran `/exec`).
+1. Unggah `sheets/Database-SIPALING-LSP-UNIMED.xlsx` ke Google Drive. Klik kanan → **Buka dengan → Google Spreadsheet**, lalu **File → Simpan sebagai Google Spreadsheet**.
+2. Lengkapi sel berwarna kuning:
+   - **Skema**: kode, nama resmi 16 skema, jumlah unit, dan **persyaratan khusus tiap skema** (satu per baris).
+   - **Jadwal**: 16 jadwal untuk **17 Oktober 2026** sudah disiapkan. Periksa batas daftar dan TUK. Kuota boleh diisi untuk kontrol internal; kuota tidak ditampilkan ke publik.
+   - **TUK**, **Asesor**, **Pengaturan** (nomor lisensi, email resmi, telepon).
+   - **Dokumen**: link formulir umum dan APL-02 per skema (kolom `id_skema`).
+3. Di spreadsheet tersebut buka **Ekstensi → Apps Script**. Tempel `backend/Code.gs`, simpan. *(Opsional)* tampilkan file manifes lalu ganti dengan `backend/appsscript.json`.
+4. Jalankan **`setup()`** sekali dan beri izin (Spreadsheet, Drive, kirim email). Password akun **admin** muncul di Log eksekusi.
+5. **Terapkan → Deployment baru → Aplikasi web** — Jalankan sebagai: **Saya**, Akses: **Siapa saja**. Salin URL `/exec` ke `assets/js/config.js`.
 
-> Setiap kali `Code.gs` diubah, buat versi baru lewat **Terapkan → Kelola deployment → Edit → Versi baru**. Dengan cara ini URL tetap sama.
+### Nomor registrasi & bukti pendaftaran
 
-Lupa password admin? Jalankan fungsi `resetPasswordAdmin`. Password baru akan muncul di Log eksekusi.
+1. Calon asesi mengisi formulir dan menekan **Kirim permohonan**.
+2. Apps Script mengunci proses, memeriksa jadwal dan NIK ganda, lalu membuat nomor urut otomatis `LSPU-YYMM-0001` dan menyimpan baris ke sheet **Pendaftaran** serta berkas ke Drive.
+3. Nomor registrasi langsung tampil di layar beserta ringkasan pendaftaran, tombol **Cetak / simpan PDF bukti**, dan salin nomor.
+4. Bila `kirim_email = YA`, **bukti pendaftaran dikirim ke email** asesi. Email berikutnya terkirim otomatis saat verifikasi (L3), penjadwalan (L4), hasil (L7), dan sertifikat siap diambil (L8).
+5. Asesi dapat mencetak ulang bukti kapan saja di menu **Status permohonan** (No. Registrasi + email).
+
+Kuota email harian Apps Script terbatas (akun Google Workspace lebih besar daripada akun Gmail biasa). Jika kuota habis, pendaftaran tetap tersimpan dan nomor tetap tampil di layar.
 
 ## 4. Memasang frontend (GitHub Pages)
 
