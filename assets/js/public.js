@@ -1,18 +1,38 @@
 /* SIPALING LSP UNIMED — halaman layanan publik (asesi / pemohon) */
 (function () {
-  const { api, esc, $, $$, tgl, rupiah, badge, toast, loading, fileToPayload, formData, busy, copy, icon, SOP, tahapPeserta, store, DEMO, CFG } = window.S;
+  const { api, esc, $, $$, tgl, rupiah, badge, toast, loading, fileToPayload, formData, busy, copy, icon, guilloche, SOP, tahapPeserta, store, DEMO, CFG } = window.S;
 
   const NAV = [
-    { group: null, items: [['beranda', 'Beranda', 'home']] },
-    { group: 'Informasi', items: [['alur', 'Alur Layanan (SOP)', 'flow'], ['skema', 'Skema Sertifikasi', 'book'], ['dokumen', 'Dokumen Mutu', 'file']] },
-    { group: 'Uji Kompetensi', items: [['jadwal', 'Jadwal & Registrasi UK', 'cal'], ['status', 'Status Pendaftaran', 'search'], ['plotting', 'Plotting Jadwal & TUK', 'grid'], ['hasil', 'Hasil Uji Kompetensi', 'check'], ['sertifikat', 'Tracer Sertifikat', 'award']] },
-    { group: 'Layanan Pasca-Uji', items: [['banding', 'Banding Asesmen', 'scale'], ['surveilans', 'Surveilans', 'eye'], ['legalisir', 'Legalisir Sertifikat', 'stamp'], ['rcc', 'Perpanjangan (RCC)', 'refresh']] },
-    { group: 'Pengaduan & Mutu', items: [['keluhan', 'Keluhan Layanan', 'chat'], ['tiket', 'Lacak Tiket', 'ticket'], ['survei', 'Survei Kepuasan', 'star']] }
+    { group: 'Informasi', items: [['alur', 'Alur layanan (SOP)', 'flow', '10 langkah pelayanan sertifikasi'], ['skema', 'Skema sertifikasi', 'book', 'Unit, persyaratan, dan biaya'], ['dokumen', 'Dokumen mutu', 'file', 'SOP, acuan, dan formulir']] },
+    { group: 'Uji kompetensi', items: [['jadwal', 'Jadwal & pendaftaran', 'cal', 'Pilih jadwal lalu daftar online'], ['status', 'Status permohonan', 'search', 'Verifikasi, jadwal, dan riwayat'], ['plotting', 'Plotting asesor & TUK', 'grid', 'Peserta yang sudah dijadwalkan'], ['hasil', 'Hasil uji', 'check', 'Keputusan kompeten / belum'], ['sertifikat', 'Lacak sertifikat', 'award', 'Status cetak dan pengambilan']] },
+    { group: 'Setelah uji', items: [['banding', 'Banding asesmen', 'scale', 'Ajukan keberatan atas keputusan'], ['surveilans', 'Surveilans', 'eye', 'Pemeliharaan kompetensi'], ['legalisir', 'Legalisir sertifikat', 'stamp', 'Pengesahan salinan sertifikat'], ['rcc', 'Perpanjangan (RCC)', 'refresh', 'Sertifikasi ulang']] },
+    { group: 'Bantuan', items: [['keluhan', 'Sampaikan keluhan', 'chat', 'Ditindaklanjuti Manajemen Mutu'], ['tiket', 'Lacak tiket', 'ticket', 'Tanggapan keluhan & layanan'], ['survei', 'Survei kepuasan', 'star', 'Nilai pelayanan kami']] }
   ];
-  const TITLES = {}; NAV.forEach(g => g.items.forEach(i => TITLES[i[0]] = i[1])); TITLES.daftar = 'Formulir Pendaftaran';
+  const INFO = { beranda: ['Beranda', ''] };
+  NAV.forEach(g => g.items.forEach(i => INFO[i[0]] = [i[1], i[3], g.group]));
+  INFO.daftar = ['Formulir pendaftaran', 'Permohonan sertifikasi kompetensi (FR.APL.01)', 'Uji kompetensi'];
+  const LEAD = {
+    alur: 'Setiap permohonan melewati sepuluh langkah yang sama. Setiap langkah punya penanggung jawab dan tercatat, sehingga dapat ditelusuri kembali.',
+    skema: 'Pilih skema yang sesuai dengan bidang Anda. Persyaratan dasar dan jumlah unit kompetensi tercantum di setiap skema.',
+    dokumen: 'Dokumen yang menjadi dasar pelayanan sertifikasi di LSP Universitas Negeri Medan.',
+    jadwal: 'Pilih jadwal yang masih dibuka, lalu isi formulir permohonan dan unggah dokumen persyaratan.',
+    status: 'Pantau verifikasi persyaratan, jadwal asesmen, asesor, dan TUK Anda.',
+    plotting: 'Daftar peserta yang sudah ditetapkan asesor, TUK, dan waktu asesmennya. Nama ditampilkan sebagian.',
+    hasil: 'Keputusan sertifikasi disampaikan setelah asesmen dan rapat keputusan.',
+    sertifikat: 'Ikuti sertifikat Anda dari pengajuan ke BNSP sampai diserahkan.',
+    banding: 'Peserta yang tidak sepakat dengan keputusan asesmen berhak mengajukan banding.',
+    surveilans: 'Laporkan kegiatan yang menjaga kompetensi Anda selama masa berlaku sertifikat.',
+    legalisir: 'Ajukan pengesahan salinan sertifikat kompetensi yang diterbitkan melalui LSP ini.',
+    rcc: 'Perpanjang sertifikat yang akan atau sudah habis masa berlakunya.',
+    keluhan: 'Setiap keluhan diberi nomor tiket dan ditindaklanjuti Bagian Manajemen Mutu. Identitas pelapor dijaga.',
+    tiket: 'Masukkan nomor tiket dan email untuk melihat tanggapan petugas.',
+    survei: 'Penilaian Anda dipakai untuk memperbaiki mutu layanan sertifikasi.',
+    daftar: 'Isi data sesuai KTP. Kolom bertanda * wajib diisi.'
+  };
 
   let PD = null; // data publik (cache)
-  const view = $('#view');
+  const root = $('#view');
+  let view = root;
 
   async function pd(force) {
     if (!PD || force) PD = await api('publicData');
@@ -21,38 +41,75 @@
 
   /* ---------------- Kerangka ---------------- */
   function renderNav(active) {
-    $('#nav').innerHTML = NAV.map(g => (g.group ? `<div class="nav-group">${esc(g.group)}</div>` : '') +
-      g.items.map(i => `<a href="#/${i[0]}" class="${active === i[0] ? 'active' : ''}">${icon(i[2])}<span>${esc(i[1])}</span></a>`).join('')).join('');
+    $('#nav').innerHTML = `<a href="#/beranda" class="${active === 'beranda' ? 'cur' : ''}">Beranda</a>` + NAV.map(g => {
+      const cur = g.items.some(i => i[0] === active);
+      return `<div class="grp ${cur ? 'cur' : ''}" data-label="${esc(g.group)}"><button type="button" aria-expanded="false">${esc(g.group)} ${icon('chev')}</button>
+        <div class="drop">${g.items.map(i => `<a href="#/${i[0]}" class="${active === i[0] ? 'cur' : ''}">${icon(i[2])}<span><b>${esc(i[1])}</b><small class="muted">${esc(i[3])}</small></span></a>`).join('')}</div></div>`;
+    }).join('');
   }
+  function closeMenus() {
+    $$('.grp.open').forEach(g => { g.classList.remove('open'); $('button', g).setAttribute('aria-expanded', 'false'); });
+  }
+  $('#nav').addEventListener('click', (e) => {
+    const b = e.target.closest('.grp > button');
+    if (!b) return;
+    const g = b.parentElement, was = g.classList.contains('open');
+    closeMenus();
+    if (!was) { g.classList.add('open'); b.setAttribute('aria-expanded', 'true'); }
+  });
+  document.addEventListener('click', (e) => { if (!e.target.closest('.grp')) closeMenus(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMenus(); document.body.classList.remove('nav-open'); } });
 
   function footer(p) {
-    $('#footer').innerHTML = `<b>${esc(p.nama_lsp || 'LSP UNIMED')}</b>${p.nomor_lisensi ? ' · Lisensi ' + esc(p.nomor_lisensi) : ''}<br>
-      ${esc(p.alamat || '')}${p.email ? ' · ' + esc(p.email) : ''}${p.telepon ? ' · ' + esc(p.telepon) : ''}${p.jam_layanan ? ' · Layanan: ' + esc(p.jam_layanan) : ''}`;
+    $('#footer').innerHTML = `<div class="in">
+      <div><b>${esc(p.nama_lsp || 'LSP Universitas Negeri Medan')}</b>${esc(p.alamat || '')}${p.nomor_lisensi ? '<br>Lisensi BNSP ' + esc(p.nomor_lisensi) : ''}</div>
+      <div><b>Hubungi kami</b><ul>${p.email ? `<li><a href="mailto:${esc(p.email)}">${esc(p.email)}</a></li>` : ''}${p.telepon ? `<li>${esc(p.telepon)}</li>` : ''}${p.whatsapp ? `<li><a href="https://wa.me/${esc(p.whatsapp)}" target="_blank" rel="noopener">WhatsApp</a></li>` : ''}${p.jam_layanan ? `<li>${esc(p.jam_layanan)}</li>` : ''}</ul></div>
+      <div><b>Tautan</b><ul><li><a href="#/alur">Alur layanan (SOP ${esc(SOP.nomor)})</a></li><li><a href="#/dokumen">Dokumen mutu</a></li><li><a href="#/keluhan">Sampaikan keluhan</a></li><li><a href="admin.html">Masuk petugas</a></li></ul></div></div>`;
   }
 
   async function router() {
     const parts = (location.hash.replace(/^#\/?/, '') || 'beranda').split('/');
-    const page = parts[0];
-    renderNav(page === 'daftar' ? 'jadwal' : page);
-    $('#pageTitle').textContent = TITLES[page] || 'Beranda';
+    const page = PAGES[parts[0]] ? parts[0] : 'beranda';
+    const navKey = page === 'daftar' ? 'jadwal' : page;
+    renderNav(navKey);
+    closeMenus();
     document.body.classList.remove('nav-open');
+    $('#menuBtn').setAttribute('aria-expanded', 'false');
     window.scrollTo(0, 0);
-    view.innerHTML = loading();
+    const info = INFO[page] || INFO.beranda;
+    document.title = (page === 'beranda' ? '' : info[0] + ' — ') + 'SIPALING LSP UNIMED';
+    if (page === 'beranda') { root.innerHTML = loading(); view = root; }
+    else {
+      root.innerHTML = `<div class="page-head"><div class="crumb"><a href="#/beranda">Beranda</a> / ${esc(info[2] || '')}</div><h1>${esc(info[0])}</h1>${LEAD[page] ? `<p>${esc(LEAD[page])}</p>` : ''}</div><div class="page" id="pg">${loading()}</div>`;
+      view = $('#pg');
+    }
     try {
       const data = await pd();
       footer(data.pengaturan);
-      const fn = PAGES[page] || PAGES.beranda;
-      await fn(data, parts.slice(1));
+      await PAGES[page](data, parts.slice(1));
     } catch (e) {
-      view.innerHTML = `<div class="notice bad"><b>Gagal memuat.</b> ${esc(e.message)}</div><button class="btn ghost" onclick="location.reload()">Muat ulang</button>`;
+      view.innerHTML = `<div class="notice bad"><b>Halaman gagal dimuat.</b> ${esc(e.message)}</div><button class="btn ghost" onclick="location.reload()">Muat ulang</button>`;
     }
+  }
+
+  /* ---------------- Jadwal (blok tanggal) ---------------- */
+  const BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  function schedItem(j) {
+    const m = String(j.tanggal || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const kuota = +j.kuota || 0;
+    const pct = kuota ? Math.min(100, Math.round(j.terisi / kuota * 100)) : 0;
+    const status = j.bisa_daftar ? '' : badge(j.status === 'Dibuka' ? 'Ditutup' : j.status);
+    return `<li>
+      <div class="date">${m ? `<div class="m">${BLN[+m[2] - 1]}</div><div class="d">${+m[3]}</div><div class="y">${m[1]}</div>` : '<div class="d">?</div>'}</div>
+      <div><h3>${esc(j.nama_skema)}</h3><div class="meta"><span>${tgl(j.tanggal, true).split(',')[0]}${j.waktu ? ', ' + esc(j.waktu) : ''}</span><span>${esc(j.nama_tuk || '')}</span>${j.batas_daftar ? `<span>Daftar paling lambat ${tgl(j.batas_daftar)}</span>` : ''}</div></div>
+      <div class="end">${kuota ? `<div class="quota">${j.terisi} dari ${kuota} kursi terisi<i style="--p:${pct}%"></i></div>` : `<div class="quota">${j.terisi} pendaftar</div>`}
+        ${j.bisa_daftar ? `<a class="btn sm" href="#/daftar/${esc(j.id_jadwal)}">Daftar</a>` : status}</div></li>`;
   }
 
   /* ---------------- Komponen lookup peserta ---------------- */
   function lookupForm(id, judul, tombol) {
     const last = JSON.parse(store.get('sipaling_lookup') || '{}');
-    return `<div class="card no-print"><h2>${esc(judul)}</h2>
-      <p class="muted">Masukkan Nomor Registrasi dan email yang Anda gunakan saat mendaftar.</p>
+    return `<div class="card no-print"><p class="muted">${esc(judul)}: masukkan nomor registrasi dan email yang Anda pakai saat mendaftar.</p>
       <form class="form" id="${id}">
         <div class="row">
           <label class="f">No. Registrasi <input name="no_reg" required placeholder="LSPU-2610-0001" value="${esc(last.no_reg || '')}" autocomplete="off"></label>
@@ -102,47 +159,58 @@
   /* ---------------- Halaman ---------------- */
   const PAGES = {
     beranda(D) {
-      const p = D.pengaturan, s = D.statistik;
-      const next = D.jadwal.filter(j => j.bisa_daftar).slice(0, 5);
-      view.innerHTML = `
-      <section class="hero">
-        <h1>SIPALING <em>${esc(p.nama_singkat || 'LSP UNIMED')}</em></h1>
-        <div class="sub">${esc(p.tagline || 'Sistem Informasi Pelayanan Sertifikasi Terintegrasi')}</div>
-        <p>${esc(p.deskripsi || '')}</p>
-        <div class="actions">
-          <a class="btn gold" href="#/jadwal">${icon('cal')} Daftar Uji Kompetensi</a>
-          <a class="btn light" href="#/status">${icon('search')} Cek Status Pendaftaran</a>
-          <a class="btn light" href="#/alur">${icon('flow')} Alur Layanan</a>
+      const p = D.pengaturan, st = D.statistik;
+      const next = D.jadwal.filter(j => j.bisa_daftar).slice(0, 4);
+      const last = JSON.parse(store.get('sipaling_lookup') || '{}');
+      root.innerHTML = `
+      <section class="hero-wrap">${guilloche()}
+        <div class="hero">
+          <div>
+            <h1>Sertifikasi kompetensi, dari pendaftaran sampai sertifikat di tangan.</h1>
+            <p class="lead">Daftar uji kompetensi, pantau verifikasi dan jadwal asesmen, lihat hasil, dan lacak sertifikat BNSP Anda di ${esc(p.nama_lsp || 'LSP Universitas Negeri Medan')}.</p>
+            <div class="actions"><a class="btn" href="#/jadwal">${icon('cal')} Lihat jadwal & daftar</a><a class="btn ghost" href="#/skema">${icon('book')} Pilih skema</a></div>
+          </div>
+          <form class="track-card form" id="fTrack">
+            <div><h2>Lacak permohonan</h2><p style="margin:0">Gunakan nomor registrasi dan email saat mendaftar.</p></div>
+            <label class="f">Nomor registrasi<input name="no_reg" required placeholder="LSPU-2610-0001" value="${esc(last.no_reg || '')}" autocomplete="off"></label>
+            <label class="f">Email<input name="email" type="email" required placeholder="nama@email.com" value="${esc(last.email || '')}"></label>
+            <button class="btn dark block" type="submit">${icon('search')} Lihat status</button>
+          </form>
+        </div>
+        <div class="rail-wrap">
+          <div class="rail-title"><h2>Sepuluh langkah layanan sertifikasi</h2><a href="#/alur" style="font-size:.9rem">Baca SOP ${esc(SOP.nomor)}</a></div>
+          <ol class="rail">${SOP.langkah.map(l => `<li><a href="${l.link}"><span class="node">${l.no}</span><b>${esc(l.nama.replace(' Sertifikasi', '').replace(' Pelayanan', ''))}</b><small class="muted">${esc(l.pj)}</small></a></li>`).join('')}</ol>
         </div>
       </section>
-      ${p.pengumuman ? `<div class="notice"><b>Pengumuman.</b> ${esc(p.pengumuman)}</div>` : ''}
-      <h2>Statistik Layanan</h2>
-      <div class="grid g4" style="margin-bottom:18px">
-        <div class="stat"><div class="k">Skema</div><div class="v">${s.skema}</div></div>
-        <div class="stat"><div class="k">TUK</div><div class="v">${s.tuk}</div></div>
-        <div class="stat"><div class="k">Asesor</div><div class="v">${s.asesor}</div></div>
-        <div class="stat"><div class="k">Asesi</div><div class="v">${Number(s.asesi).toLocaleString('id-ID')}</div></div>
-      </div>
-      <div class="grid g2">
-        <div class="card"><div class="card-head"><h3>Jadwal uji yang dibuka</h3><a href="#/jadwal" class="btn sm ghost">Lihat semua</a></div>
-          ${next.length ? `<div class="table-wrap"><table><thead><tr><th>Skema</th><th>Tanggal</th><th>Sisa</th></tr></thead><tbody>
-            ${next.map(j => `<tr class="clickable" onclick="location.hash='#/daftar/${esc(j.id_jadwal)}'"><td>${esc(j.nama_skema)}</td><td>${tgl(j.tanggal)}</td><td>${+j.kuota ? j.sisa : '∞'}</td></tr>`).join('')}
-          </tbody></table></div>` : '<p class="muted">Belum ada jadwal yang dibuka.</p>'}
+      <div class="page">
+        ${p.pengumuman ? `<div class="notice">${esc(p.pengumuman)}</div>` : ''}
+        <div class="figures">
+          <div><b>${st.skema}</b><span>skema sertifikasi</span></div>
+          <div><b>${st.tuk}</b><span>tempat uji kompetensi</span></div>
+          <div><b>${st.asesor}</b><span>asesor kompetensi</span></div>
+          <div><b>${Number(st.asesi).toLocaleString('id-ID')}</b><span>asesi terdaftar</span></div>
         </div>
-        <div class="card"><h3>Layanan cepat</h3>
-          <div class="grid g2">
-            <a class="btn ghost" href="#/hasil">${icon('check')} Hasil Uji</a>
-            <a class="btn ghost" href="#/sertifikat">${icon('award')} Tracer Sertifikat</a>
-            <a class="btn ghost" href="#/plotting">${icon('grid')} Plotting & TUK</a>
-            <a class="btn ghost" href="#/keluhan">${icon('chat')} Sampaikan Keluhan</a>
-            <a class="btn ghost" href="#/legalisir">${icon('stamp')} Legalisir</a>
-            <a class="btn ghost" href="#/survei">${icon('star')} Survei Kepuasan</a>
-          </div>
+        <div class="section-title"><h2>Jadwal uji yang dibuka</h2><a href="#/jadwal">Semua jadwal</a></div>
+        ${next.length ? `<ul class="sched">${next.map(schedItem).join('')}</ul>` : '<div class="card"><p class="muted" style="margin:0">Belum ada jadwal yang dibuka. Pantau halaman ini atau email resmi LSP.</p></div>'}
+        <div class="grid g2" style="margin-top:34px">
+          <div class="card"><h3>Setelah uji kompetensi</h3>
+            <p class="muted">Layanan untuk peserta dan pemegang sertifikat.</p>
+            <div class="grid g2" style="gap:8px">
+              <a class="btn ghost" href="#/hasil">${icon('check')} Hasil uji</a><a class="btn ghost" href="#/sertifikat">${icon('award')} Lacak sertifikat</a>
+              <a class="btn ghost" href="#/banding">${icon('scale')} Banding</a><a class="btn ghost" href="#/legalisir">${icon('stamp')} Legalisir</a>
+              <a class="btn ghost" href="#/surveilans">${icon('eye')} Surveilans</a><a class="btn ghost" href="#/rcc">${icon('refresh')} Perpanjangan</a>
+            </div></div>
+          <div class="card"><h3>Ada kendala pelayanan?</h3>
+            <p class="muted">Sampaikan keluhan Anda. Setiap keluhan mendapat nomor tiket dan ditanggapi petugas.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="#/keluhan">${icon('chat')} Sampaikan keluhan</a><a class="btn ghost" href="#/tiket">${icon('ticket')} Lacak tiket</a></div>
+            ${p.jam_layanan ? `<p class="muted" style="margin:14px 0 0">Jam layanan sekretariat: ${esc(p.jam_layanan)}</p>` : ''}</div>
         </div>
-      </div>
-      <div class="card"><div class="card-head"><h3>Alur pelayanan sertifikasi</h3><small class="mono">${esc(SOP.nomor)} · Rev. ${esc(SOP.revisi)}</small></div>
-        <div class="mini-steps">${SOP.langkah.map(l => `<div><b>Langkah ${l.no}</b>${esc(l.nama)}</div>`).join('')}</div>
       </div>`;
+      $('#fTrack').addEventListener('submit', (e) => {
+        e.preventDefault();
+        store.set('sipaling_lookup', JSON.stringify(formData(e.target)));
+        location.hash = '#/status';
+      });
     },
 
     alur() {
@@ -176,19 +244,15 @@
         const list = D.skema.filter(s => !q || (s.nama_skema + ' ' + s.kode_skema).toLowerCase().indexOf(q) >= 0);
         $('#skList').innerHTML = list.length ? list.map(s => {
           const jd = D.jadwal.filter(j => j.id_skema === s.id_skema && j.bisa_daftar).length;
-          return `<div class="card skema-card">
-            <div class="code mono">${esc(s.kode_skema)}</div>
-            <h3 style="margin:0">${esc(s.nama_skema)}</h3>
-            <div><span class="badge info">${esc(s.jenis_skema || 'Skema')}</span> <span class="badge">${esc(s.jumlah_unit || '-')} unit kompetensi</span></div>
-            <div><small class="muted">Biaya:</small> <b>${rupiah(s.biaya)}</b></div>
-            ${s.persyaratan ? `<div><small class="muted">Persyaratan dasar:</small><ul>${String(s.persyaratan).split(/\n+/).filter(String).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
-            <div class="foot">
-              ${s.link_dokumen ? `<a class="btn sm ghost" href="${esc(s.link_dokumen)}" target="_blank" rel="noopener">${icon('download')} Dokumen skema</a>` : ''}
-              <a class="btn sm ${jd ? 'gold' : 'ghost'}" href="#/jadwal/${esc(s.id_skema)}">${icon('cal')} ${jd ? jd + ' jadwal dibuka' : 'Lihat jadwal'}</a>
-            </div></div>`;
-        }).join('') : '<div class="empty">Skema tidak ditemukan.</div>';
+          return `<div class="skema-item"><div>
+            ${s.kode_skema ? `<div class="code">${esc(s.kode_skema)}</div>` : ''}<h3>${esc(s.nama_skema)}</h3>
+            <div class="facts"><span>${esc(s.jenis_skema || 'Skema')}</span><span>${esc(s.jumlah_unit || '-')} unit kompetensi</span><span>Biaya: ${rupiah(s.biaya)}</span></div>
+            ${s.persyaratan ? `<ul>${String(s.persyaratan).split(/\n+/).filter(String).map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>
+            <div class="act"><a class="btn sm ${jd ? '' : 'ghost'}" href="#/jadwal/${esc(s.id_skema)}">${jd ? jd + ' jadwal dibuka' : 'Lihat jadwal'}</a>
+            ${s.link_dokumen ? `<a class="btn sm ghost" href="${esc(s.link_dokumen)}" target="_blank" rel="noopener">${icon('download')} Dokumen skema</a>` : ''}</div></div>`;
+        }).join('') : '<div class="empty">Tidak ada skema dengan kata kunci tersebut.</div>';
       };
-      view.innerHTML = `<div class="toolbar"><input id="skQ" placeholder="Cari nama atau kode skema…"><span class="badge">${D.skema.length} skema</span></div><div class="grid g3" id="skList"></div>`;
+      view.innerHTML = `<div class="toolbar"><input id="skQ" placeholder="Cari nama atau kode skema" aria-label="Cari skema"><span class="muted">${D.skema.length} skema</span></div><div class="skema-list" id="skList"></div>`;
       $('#skQ').oninput = (e) => draw(e.target.value.toLowerCase().trim());
       draw('');
     },
@@ -205,21 +269,14 @@
     jadwal(D, args) {
       const pre = args[0] || '';
       view.innerHTML = `<div class="toolbar">
-        <select id="jdS"><option value="">Semua skema</option>${D.skema.map(s => `<option value="${esc(s.id_skema)}" ${pre === s.id_skema ? 'selected' : ''}>${esc(s.nama_skema)}</option>`).join('')}</select>
-        <label class="check" style="flex:none"><input type="checkbox" id="jdO" checked> Hanya yang dibuka</label></div>
-        <div class="table-wrap"><table><thead><tr><th>Skema</th><th>Tanggal &amp; waktu</th><th>TUK</th><th>Batas daftar</th><th>Kuota</th><th>Status</th><th></th></tr></thead><tbody id="jdB"></tbody></table></div>
-        <p class="muted" style="margin-top:12px">Jadwal final, asesor, dan TUK ditetapkan setelah verifikasi persyaratan (Langkah 3–4 SOP) dan dapat dilihat di menu <a href="#/plotting">Plotting Jadwal &amp; TUK</a>.</p>`;
+        <select id="jdS" aria-label="Filter skema"><option value="">Semua skema</option>${D.skema.map(s => `<option value="${esc(s.id_skema)}" ${pre === s.id_skema ? 'selected' : ''}>${esc(s.nama_skema)}</option>`).join('')}</select>
+        <label class="check"><input type="checkbox" id="jdO" checked> Hanya yang masih dibuka</label></div>
+        <ul class="sched" id="jdB"></ul>
+        <p class="muted" style="margin-top:14px">Asesor dan TUK final ditetapkan setelah persyaratan Anda diverifikasi, lalu tampil di <a href="#/plotting">Plotting asesor & TUK</a>.</p>`;
       const draw = () => {
         const s = $('#jdS').value, o = $('#jdO').checked;
         const list = D.jadwal.filter(j => (!s || j.id_skema === s) && (!o || j.bisa_daftar));
-        $('#jdB').innerHTML = list.length ? list.map(j => `<tr>
-          <td><b>${esc(j.nama_skema)}</b><br><small class="mono muted">${esc(j.id_jadwal)} ${j.keterangan ? '· ' + esc(j.keterangan) : ''}</small></td>
-          <td>${tgl(j.tanggal, true)}<br><small class="muted">${esc(j.waktu || '')}</small></td>
-          <td>${esc(j.nama_tuk || '')}</td><td>${tgl(j.batas_daftar)}</td>
-          <td>${+j.kuota ? `${j.terisi}/${j.kuota}` : j.terisi + ' pendaftar'}</td>
-          <td>${badge(j.bisa_daftar ? 'Dibuka' : j.status === 'Dibuka' ? 'Ditutup' : j.status)}</td>
-          <td>${j.bisa_daftar ? `<a class="btn sm gold" href="#/daftar/${esc(j.id_jadwal)}">Daftar</a>` : ''}</td></tr>`).join('')
-          : '<tr><td colspan="7" class="empty">Tidak ada jadwal yang sesuai.</td></tr>';
+        $('#jdB').innerHTML = list.length ? list.map(schedItem).join('') : '<li style="display:block" class="empty">Belum ada jadwal yang sesuai filter.</li>';
       };
       $('#jdS').onchange = draw; $('#jdO').onchange = draw; draw();
     },
@@ -492,11 +549,9 @@
 
   /* ---------------- Mulai ---------------- */
   $('#menuBtn').innerHTML = icon('menu');
-  $('#menuBtn').onclick = () => document.body.classList.toggle('nav-open');
-  $('#scrim').onclick = () => document.body.classList.remove('nav-open');
+  $('#menuBtn').onclick = () => { const o = document.body.classList.toggle('nav-open'); $('#menuBtn').setAttribute('aria-expanded', String(o)); $('#menuBtn').innerHTML = icon(o ? 'x' : 'menu'); };
   if (CFG.LOGO_URL) { $('#logo').src = CFG.LOGO_URL; }
-  $('#brandSub').textContent = CFG.NAMA_LSP || 'LSP UNIMED';
-  if (DEMO) { $('#demoFlag').hidden = false; $('#demoFlag').title = 'API_URL di config.js belum diisi — data contoh, tidak tersimpan ke server.'; }
-  window.addEventListener('hashchange', router);
+  if (DEMO) $('#demoBar').hidden = false;
+  window.addEventListener('hashchange', () => { $('#menuBtn').innerHTML = icon('menu'); router(); });
   router();
 })();

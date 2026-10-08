@@ -13,15 +13,17 @@
 
   /* ---------------- Login ---------------- */
   function loginView(msg) {
-    app.innerHTML = `<div class="login-wrap"><form class="login-card form" id="fLogin">
-      <div class="brand"><img src="${esc(CFG.LOGO_URL || 'assets/img/logo.svg')}" alt=""><div><b>SIPALING</b><span>Panel Petugas ${esc(CFG.NAMA_LSP || 'LSP UNIMED')}</span></div></div>
+    app.innerHTML = `<div class="login-wrap">
+      <div class="login-art">${S.guilloche()}<h1>Panel petugas LSP Universitas Negeri Medan</h1><p>Verifikasi, penjadwalan, hasil, sertifikat, dan rekaman pelayanan sesuai SOP ${esc(SOP.nomor)}.</p></div>
+      <div class="login-side"><form class="login-card form" id="fLogin">
+      <div class="brand"><img src="${esc(CFG.LOGO_URL || 'assets/img/logo.svg')}" alt=""><div><b>SIPALING</b><span>Masuk petugas</span></div></div>
       ${msg ? `<div class="notice bad">${esc(msg)}</div>` : ''}
       ${DEMO ? '<div class="notice">Mode demo: username <b>admin</b>, password <b>demo12345</b>.</div>' : ''}
       <label class="f">Username<input name="username" autocomplete="username" required></label>
       <label class="f">Password<input name="password" type="password" autocomplete="current-password" required></label>
       <button class="btn block" type="submit">${icon('lock')} Masuk</button>
-      <a href="index.html" class="muted" style="text-align:center;font-size:.85rem">← Kembali ke layanan publik</a>
-      <div id="lOut"></div></form></div>`;
+      <a href="index.html" class="muted" style="font-size:.88rem">Kembali ke layanan publik</a>
+      <div id="lOut"></div></form></div></div>`;
     const f = $('#fLogin');
     f.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -49,9 +51,9 @@
 
   function shell() {
     app.innerHTML = `
-      <aside class="sidebar"><div class="brand"><img src="${esc(CFG.LOGO_URL || 'assets/img/logo.svg')}" alt=""><div><b>SIPALING</b><span>Panel Petugas</span></div></div>
+      <aside class="sidebar"><div class="brand"><img src="${esc(CFG.LOGO_URL || 'assets/img/logo.svg')}" alt=""><div><b>SIPALING</b><span>Panel petugas</span></div></div>
         <nav class="nav" id="nav"></nav>
-        <div class="side-foot"><b style="color:#fff">${esc(USER.nama)}</b><br>${esc(USER.peran)}<br><a href="#" id="logout">Keluar</a> · <a href="index.html" target="_blank">Situs publik</a></div></aside>
+        <div class="side-foot"><b>${esc(USER.nama)}</b><br>${esc(USER.peran)}<br><a href="#" id="logout">Keluar</a> · <a href="index.html" target="_blank">Situs publik</a></div></aside>
       <div class="scrim" id="scrim"></div>
       <div class="main"><header class="topbar"><button class="menu-btn" id="menuBtn" aria-label="Menu">${icon('menu')}</button><h1 id="pageTitle"></h1><div class="spacer"></div>${DEMO ? '<span class="demo-flag">MODE DEMO</span>' : ''}</header>
         <main class="view" id="view"></main></div>`;
@@ -95,7 +97,7 @@
       const s = await api('summary');
       const tile = (k, n, tab) => `<div class="stat clickable" onclick="location.hash='#/pendaftar/${tab}'"><div class="k">${esc(k)}</div><div class="v">${n}</div></div>`;
       v.innerHTML = `
-        <div class="hero" style="padding:22px 24px"><h1 style="font-size:1.4rem">Selamat datang, <em>${esc(USER.nama)}</em></h1><div class="sub" style="margin:0">${esc(USER.peran)} · SOP ${esc(SOP.nomor)}</div></div>
+        <div class="welcome"><div><h2>Selamat datang, ${esc(USER.nama)}</h2><p>${esc(USER.peran)}, bekerja mengikuti SOP ${esc(SOP.nomor)}</p></div><a class="btn sm ghost" href="index.html" target="_blank">Buka situs publik</a></div>
         <div class="grid g4" style="margin-bottom:16px">
           ${tile('Total pendaftar', s.total, 'semua')}${tile('Menunggu verifikasi (L3)', s.menunggu_verifikasi, 'verifikasi')}
           ${tile('Siap dijadwalkan (L4)', s.siap_dijadwalkan, 'jadwal')}${tile('Terjadwal / asesmen (L5–6)', s.terjadwal, 'asesmen')}

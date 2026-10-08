@@ -168,9 +168,27 @@
     download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
     print: 'M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z',
     send: 'M4 12l16-8-6 16-3-6z',
-    shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z'
+    shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+    chev: 'M6 9l6 6 6-6',
+    x: 'M6 6l12 12M18 6L6 18'
   };
   const icon = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P[n] || ''}"/></svg>`;
+
+  /** Pola guilloche (motif pengaman sertifikat) sebagai SVG dekoratif. */
+  function guilloche() {
+    const c = 380, parts = [];
+    for (let i = 0; i < 48; i++) parts.push(`<ellipse cx="${c}" cy="${c}" rx="330" ry="118" transform="rotate(${(i * 7.5).toFixed(1)} ${c} ${c})"/>`);
+    [300, 230, 160].forEach((R, k) => {
+      let d = '';
+      for (let t = 0; t <= 720; t++) {
+        const a = t / 720 * Math.PI * 2;
+        const r = R + (14 - k * 3) * Math.sin(a * (36 - k * 8));
+        d += (t ? 'L' : 'M') + (c + r * Math.cos(a)).toFixed(1) + ' ' + (c + r * Math.sin(a)).toFixed(1);
+      }
+      parts.push(`<path d="${d}Z"/>`);
+    });
+    return `<svg class="guilloche" viewBox="0 0 760 760" fill="none" stroke="currentColor" stroke-width=".7" aria-hidden="true">${parts.join('')}</svg>`;
+  }
 
   /* ---------------- Data SOP (XVII/SOP-PKS, Rev. 03/00) ---------------- */
   const SOP = {
@@ -222,5 +240,5 @@
     return out;
   }
 
-  window.S = { CFG, DEMO, api, store, esc, $, $$, tgl, rupiah, today, badge, toast, modal, loading, fileToPayload, formData, busy, copy, csv, icon, SOP, tahapPeserta };
+  window.S = { CFG, DEMO, api, store, esc, $, $$, tgl, rupiah, today, badge, toast, modal, loading, fileToPayload, formData, busy, copy, csv, icon, guilloche, SOP, tahapPeserta };
 })();

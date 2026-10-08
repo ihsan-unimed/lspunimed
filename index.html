@@ -8,30 +8,21 @@
   <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-  <aside class="sidebar" id="sidebar">
-    <div class="brand">
-      <img id="logo" src="assets/img/logo.svg" alt="Logo LSP">
-      <div><b>SIPALING</b><span id="brandSub">LSP UNIMED</span></div>
+  <div class="demo-bar" id="demoBar" hidden>Mode demo: data contoh tersimpan di browser ini saja. Isi <b>API_URL</b> di config.js untuk menyambungkan ke server.</div>
+  <header class="site-header">
+    <div class="in">
+      <a class="logo" href="#/beranda"><img id="logo" src="assets/img/logo.svg" alt=""><div><b>SIPALING</b><span id="brandSub">LSP Universitas Negeri Medan</span></div></a>
+      <nav class="topnav" id="nav" aria-label="Menu utama"></nav>
+      <a class="btn sm btn-track" href="#/status">Lacak permohonan</a>
+      <button class="menu-btn" id="menuBtn" aria-label="Buka menu" aria-expanded="false"></button>
     </div>
-    <nav class="nav" id="nav"></nav>
-    <div class="side-foot">Petugas LSP? <a href="admin.html">Masuk ke panel petugas</a></div>
-  </aside>
-  <div class="scrim" id="scrim"></div>
-
-  <div class="main">
-    <header class="topbar">
-      <button class="menu-btn" id="menuBtn" aria-label="Buka menu"></button>
-      <h1 id="pageTitle">Beranda</h1>
-      <div class="spacer"></div>
-      <span class="demo-flag" id="demoFlag" hidden>MODE DEMO</span>
-    </header>
-    <main class="view" id="view"></main>
-    <footer class="footer" id="footer"></footer>
-  </div>
+  </header>
+  <main id="view"></main>
+  <footer class="site-footer" id="footer"></footer>
 
   <script src="assets/js/config.js"></script>
   <script src="assets/js/mock.js"></script>
