@@ -1,8 +1,8 @@
-# SIPALING LSP UNIMED
+# SIPINTAR LSP UNIMED
 
-**S**istem **I**nformasi **P**elayanan Sertifik**a**si Terintegrasi — **LSP Universitas Negeri Medan**
+**S**istem **I**nformasi **P**emantauan dan layanan ter**INT**egr**A**si LSP Unive**R**sitas Negeri Medan
 
-Sistem ini mengadopsi alur SIPALING LSP UNS dan memetakannya ke **SOP Pelayanan Kegiatan Sertifikasi (XVII/SOP-PKS, Rev. 03/00)**. Setiap langkah SOP punya fitur, penanggung jawab, dan rekaman otomatis, sehingga proses mampu telusur saat **penyaksian uji kompetensi oleh BNSP**.
+Sistem ini mengadopsi alur layanan digital LSP UNS dan memetakannya ke **SOP Pelayanan Kegiatan Sertifikasi (XVII/SOP-PKS, Rev. 03/00)**. Setiap langkah SOP punya fitur, penanggung jawab, dan rekaman otomatis, sehingga proses mampu telusur saat **penyaksian uji kompetensi oleh BNSP**.
 
 - **Frontend**: HTML, CSS, dan JavaScript murni di **GitHub Pages**, tanpa proses build.
 - **Backend**: **Google Apps Script** (Web App) dengan **Google Spreadsheet** sebagai basis data dan **Google Drive** untuk berkas unggahan.
@@ -24,7 +24,7 @@ Sistem ini mengadopsi alur SIPALING LSP UNS dan memetakannya ke **SOP Pelayanan 
 | 9 Penanganan Keluhan | Bagian Manajemen Mutu | Formulir keluhan + nomor tiket, Lacak Tiket | Tindak lanjut + tanggapan ke pelapor | Sheet `Keluhan`, log L9 |
 | 10 Pengendalian Rekaman | Sekretariat LSP | — | Rekaman & Log (filter per langkah, ekspor CSV), **Cetak rekaman per peserta** | Sheet `Log` |
 
-Layanan tambahan yang mengikuti SIPALING UNS: **Surveilans**, **Legalisir Sertifikat**, **Perpanjangan (RCC)**, dan **Survei Kepuasan** (menjawab tujuan SOP: meningkatkan kepuasan pemohon).
+Layanan tambahan yang mengikuti layanan digital LSP UNS: **Surveilans**, **Legalisir Sertifikat**, **Perpanjangan (RCC)**, dan **Survei Kepuasan** (menjawab tujuan SOP: meningkatkan kepuasan pemohon).
 
 ---
 
@@ -48,7 +48,7 @@ backend/appsscript.json ← manifest (opsional)
 
 ## 3. Memasang backend (Excel → Google Sheets → Apps Script)
 
-1. Unggah `sheets/Database-SIPALING-LSP-UNIMED.xlsx` ke Google Drive. Klik kanan → **Buka dengan → Google Spreadsheet**, lalu **File → Simpan sebagai Google Spreadsheet**.
+1. Unggah `sheets/Database-SIPINTAR-LSP-UNIMED.xlsx` ke Google Drive. Klik kanan → **Buka dengan → Google Spreadsheet**, lalu **File → Simpan sebagai Google Spreadsheet**.
 2. Lengkapi sel berwarna kuning:
    - **Skema**: kode, nama resmi 16 skema, jumlah unit, dan **persyaratan khusus tiap skema** (satu per baris).
    - **Jadwal**: 16 jadwal untuk **17 Oktober 2026** sudah disiapkan. Periksa batas daftar dan TUK. Kuota boleh diisi untuk kontrol internal; kuota tidak ditampilkan ke publik.
@@ -104,7 +104,7 @@ Kuota email harian Apps Script terbatas (akun Google Workspace lebih besar darip
 
 - Peserta hanya bisa melihat datanya dengan **No. Registrasi + email**. Di sisi publik, NIK disamarkan dan nama di halaman plotting juga disamarkan.
 - Password petugas disimpan sebagai hash SHA-256 bergaram. Login dikunci 10 menit setelah 5 kali gagal, dan sesi berlaku 6 jam.
-- Berkas unggahan masuk ke folder Drive **`SIPALING_UPLOADS/<No.Reg>/`** dan **tidak dibagikan publik**. Agar petugas lain bisa membuka tautan berkas dari panel, bagikan folder tersebut ke akun Google mereka.
+- Berkas unggahan masuk ke folder Drive **`SIPINTAR_UPLOADS/<No.Reg>/`** dan **tidak dibagikan publik**. Agar petugas lain bisa membuka tautan berkas dari panel, bagikan folder tersebut ke akun Google mereka.
 - Link **surat hasil** dan **dokumen mutu** harus diatur *siapa saja yang memiliki link* agar dapat dibuka peserta.
 - Batas unggahan per berkas 2 MB (PDF/JPG/PNG). Ubah `MAX_FILE_MB` di `Code.gs` dan `config.js` jika perlu.
 

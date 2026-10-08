@@ -1,11 +1,11 @@
 /**
- * KONFIGURASI SIPALING LSP UNIMED
+ * KONFIGURASI SIPINTAR LSP UNIMED
  * Setelah Apps Script di-deploy sebagai Aplikasi Web, tempel URL /exec di API_URL.
  * Jika API_URL kosong, situs berjalan dalam MODE DEMO (data contoh di browser, tidak tersimpan).
  */
-window.SIPALING_CONFIG = {
+window.SIPINTAR_CONFIG = {
   API_URL: '',
-  NAMA_APLIKASI: 'SIPALING',
+  NAMA_APLIKASI: 'SIPINTAR',
   NAMA_LSP: 'LSP UNIMED',
   LOGO_URL: 'assets/img/logo.svg',   // ganti dengan logo resmi LSP (PNG/SVG)
   MAX_FILE_MB: 2

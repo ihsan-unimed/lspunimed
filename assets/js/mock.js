@@ -1,7 +1,7 @@
 /* MODE DEMO — tiruan backend di browser. Aktif hanya jika API_URL di config.js kosong.
    Data contoh disimpan di localStorage browser ini saja. Akun demo: admin / demo12345 */
 (function () {
-  const KEY = 'sipaling_demo_db_v2';
+  const KEY = 'sipintar_demo_db_v2';
   const pad = (n, w) => String(n).padStart(w, '0');
   const now = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2) + ' ' + pad(d.getHours(), 2) + ':' + pad(d.getMinutes(), 2) + ':' + pad(d.getSeconds(), 2); };
   const plus = (days) => { const d = new Date(); d.setDate(d.getDate() + days); return d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2); };
@@ -13,8 +13,8 @@
       seq: {},
       Pengaturan: {
         nama_lsp: 'LSP Universitas Negeri Medan', nama_singkat: 'LSP UNIMED',
-        tagline: 'Sistem Informasi Pelayanan Sertifikasi Terintegrasi',
-        deskripsi: 'SIPALING LSP UNIMED adalah pusat layanan digital sertifikasi kompetensi: informasi skema, pendaftaran, verifikasi, penjadwalan, hasil uji, hingga pelacakan sertifikat — profesional, objektif, transparan, terdokumentasi, dan mampu telusur.',
+        tagline: 'Sistem Informasi Pemantauan dan Layanan Terintegrasi LSP Universitas Negeri Medan',
+        deskripsi: 'SIPINTAR LSP UNIMED adalah pusat layanan digital sertifikasi kompetensi: informasi skema, pendaftaran, verifikasi, penjadwalan, hasil uji, hingga pelacakan sertifikat — profesional, objektif, transparan, terdokumentasi, dan mampu telusur.',
         nomor_lisensi: '(contoh) BNSP-LSP-xxxx-ID', alamat: 'Jl. William Iskandar Ps. V, Medan Estate, Deli Serdang, Sumatera Utara 20221',
         email: 'lsp@unimed.ac.id', telepon: '', whatsapp: '', jam_layanan: 'Senin–Jumat, 08.00–16.00 WIB',
         pengumuman: 'Pelaksanaan Uji Kompetensi perdana untuk 16 skema dilaksanakan pada Sabtu, 17 Oktober 2026. Informasi resmi dikirim ke email yang Anda daftarkan.',
@@ -201,7 +201,7 @@
       const token = 'demo-' + Math.random().toString(36).slice(2);
       const s = { username: u.username, nama: u.nama, peran: u.peran };
       sessions[token] = s;
-      try { sessionStorage.setItem('sipaling_demo_sess_' + token, JSON.stringify(s)); } catch (e) { /* abaikan */ }
+      try { sessionStorage.setItem('sipintar_demo_sess_' + token, JSON.stringify(s)); } catch (e) { /* abaikan */ }
       log(s, 10, 'Login petugas', u.username, '');
       return { token, user: s };
     }
@@ -291,7 +291,7 @@
     }
   };
 
-  window.SIPALING_MOCK = {
+  window.SIPINTAR_MOCK = {
     reset() { db = seed(); save(); },
     async call(action, data, token) {
       await new Promise(r => setTimeout(r, 180));
@@ -299,7 +299,7 @@
       if (PUBLIC[action]) { const r = PUBLIC[action](copy(data)); save(); return copy(r); }
       if (ADMIN[action]) {
         let s = sessions[token];
-        if (!s) { try { s = JSON.parse(sessionStorage.getItem('sipaling_demo_sess_' + token)); } catch (e) { s = null; } }
+        if (!s) { try { s = JSON.parse(sessionStorage.getItem('sipintar_demo_sess_' + token)); } catch (e) { s = null; } }
         if (!s) fail('Sesi berakhir. Silakan login kembali.');
         const r = ADMIN[action](copy(data), s); save(); return copy(r);
       }

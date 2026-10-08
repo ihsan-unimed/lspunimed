@@ -1,4 +1,4 @@
-/* SIPALING LSP UNIMED — identitas visual
+/* SIPINTAR LSP UNIMED — identitas visual
    Warna dari logo LSP Unimed (merah + tinta), pola guilloche khas dokumen sertifikat. */
 :root {
   --ink: #18202e;
@@ -376,3 +376,4 @@ details.card summary { cursor: pointer; list-style: revert; }
 .card-head .badge { white-space: normal; }
 .step .meta .badge { white-space: normal; }
 @media (max-width: 600px) { .steps::before { left: 15px; } .step { grid-template-columns: 32px minmax(0, 1fr); gap: 12px; } .step .num { width: 32px; height: 32px; font-size: .9rem; } }
+td.mono { white-space: nowrap; }

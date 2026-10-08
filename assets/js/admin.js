@@ -1,4 +1,4 @@
-/* SIPALING LSP UNIMED — panel petugas (Sekretariat, Bagian Administrasi, Bagian Sertifikasi, Manajemen Mutu) */
+/* SIPINTAR LSP UNIMED — panel petugas (Sekretariat, Bagian Administrasi, Bagian Sertifikasi, Manajemen Mutu) */
 (function () {
   const { api, esc, $, $$, tgl, badge, toast, modal, loading, formData, busy, csv, icon, SOP, tahapPeserta, store, DEMO, CFG } = window.S;
   const app = $('#app');
@@ -14,9 +14,9 @@
   /* ---------------- Login ---------------- */
   function loginView(msg) {
     app.innerHTML = `<div class="login-wrap">
-      <div class="login-art">${S.guilloche()}<h1>Panel petugas LSP Universitas Negeri Medan</h1><p>Verifikasi, penjadwalan, hasil, sertifikat, dan rekaman pelayanan sesuai SOP ${esc(SOP.nomor)}.</p></div>
+      <div class="login-art">${S.guilloche()}<h1>Panel petugas LSP Universitas Negeri Medan</h1><p>SIPINTAR — Sistem Informasi Pemantauan dan Layanan Terintegrasi. Verifikasi, penjadwalan, hasil, sertifikat, dan rekaman pelayanan sesuai SOP ${esc(SOP.nomor)}.</p></div>
       <div class="login-side"><form class="login-card form" id="fLogin">
-      <div class="brand"><img src="${esc(CFG.LOGO_URL || 'assets/img/logo.svg')}" alt=""><div><b>SIPALING</b><span>Masuk petugas</span></div></div>
+      <div class="brand"><img src="${esc(CFG.LOGO_URL || 'assets/img/logo.svg')}" alt=""><div><b>SIPINTAR</b><span>Masuk petugas</span></div></div>
       ${msg ? `<div class="notice bad">${esc(msg)}</div>` : ''}
       ${DEMO ? '<div class="notice">Mode demo: username <b>admin</b>, password <b>demo12345</b>.</div>' : ''}
       <label class="f">Username<input name="username" autocomplete="username" required></label>
@@ -30,8 +30,8 @@
       busy($('button', f), async () => {
         try {
           const r = await api('login', formData(f));
-          store.set('sipaling_token', r.token);
-          store.set('sipaling_user', JSON.stringify(r.user));
+          store.set('sipintar_token', r.token);
+          store.set('sipintar_user', JSON.stringify(r.user));
           USER = r.user;
           await boot();
         } catch (err) { $('#lOut').innerHTML = `<div class="notice bad">${esc(err.message)}</div>`; }
@@ -51,7 +51,7 @@
 
   function shell() {
     app.innerHTML = `
-      <aside class="sidebar"><div class="brand"><img src="${esc(CFG.LOGO_URL || 'assets/img/logo.svg')}" alt=""><div><b>SIPALING</b><span>Panel petugas</span></div></div>
+      <aside class="sidebar"><div class="brand"><img src="${esc(CFG.LOGO_URL || 'assets/img/logo.svg')}" alt=""><div><b>SIPINTAR</b><span>Panel petugas</span></div></div>
         <nav class="nav" id="nav"></nav>
         <div class="side-foot"><b>${esc(USER.nama)}</b><br>${esc(USER.peran)}<br><a href="#" id="logout">Keluar</a> · <a href="index.html" target="_blank">Situs publik</a></div></aside>
       <div class="scrim" id="scrim"></div>
@@ -59,7 +59,7 @@
         <main class="view" id="view"></main></div>`;
     $('#menuBtn').onclick = () => document.body.classList.toggle('nav-open');
     $('#scrim').onclick = () => document.body.classList.remove('nav-open');
-    $('#logout').onclick = async (e) => { e.preventDefault(); try { await api('logout'); } catch (x) { /* abaikan */ } store.del('sipaling_token'); store.del('sipaling_user'); location.hash = ''; loginView(); };
+    $('#logout').onclick = async (e) => { e.preventDefault(); try { await api('logout'); } catch (x) { /* abaikan */ } store.del('sipintar_token'); store.del('sipintar_user'); location.hash = ''; loginView(); };
   }
 
   async function loadRef() {
@@ -441,7 +441,7 @@
 
   /* ---------------- Mulai ---------------- */
   (async () => {
-    if (!store.get('sipaling_token')) return loginView();
-    try { USER = await api('me'); await boot(); } catch (e) { store.del('sipaling_token'); loginView(); }
+    if (!store.get('sipintar_token')) return loginView();
+    try { USER = await api('me'); await boot(); } catch (e) { store.del('sipintar_token'); loginView(); }
   })();
 })();

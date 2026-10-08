@@ -1,6 +1,6 @@
 /**
- * SIPALING LSP UNIMED — Backend Google Apps Script
- * Sistem Informasi Pelayanan Sertifikasi Terintegrasi
+ * SIPINTAR LSP UNIMED — Backend Google Apps Script
+ * Sistem Informasi Pemantauan dan Layanan Terintegrasi LSP Universitas Negeri Medan
  *
  * Mengacu SOP Pelayanan Kegiatan Sertifikasi (XVII/SOP-PKS, Rev. 03/00):
  *  1 Pelayanan Informasi Sertifikasi      6 Pelaksanaan Pelayanan Sertifikasi
@@ -18,7 +18,7 @@
 
 const CONFIG = {
   SPREADSHEET_ID: '',      // kosongkan jika skrip terikat (dibuat dari menu Ekstensi spreadsheet)
-  UPLOAD_FOLDER_ID: '',    // kosongkan → folder "SIPALING_UPLOADS" dibuat otomatis di Drive pemilik
+  UPLOAD_FOLDER_ID: '',    // kosongkan → folder "SIPINTAR_UPLOADS" dibuat otomatis di Drive pemilik
   MAX_FILE_MB: 2,          // batas ukuran per berkas unggahan
   SESSION_SECONDS: 21600,  // 6 jam (batas maksimum CacheService)
   TZ: 'Asia/Jakarta'
@@ -108,7 +108,7 @@ function route_(action, data, token) {
 /* ============================ LAYANAN PUBLIK ============================ */
 
 const PUBLIC = {
-  ping: () => ({ pesan: 'SIPALING LSP UNIMED aktif', waktu: now_() }),
+  ping: () => ({ pesan: 'SIPINTAR LSP UNIMED aktif', waktu: now_() }),
 
   /** Langkah 1 — Pelayanan Informasi: semua data publik dalam satu panggilan. */
   publicData: () => {
@@ -561,7 +561,7 @@ const TAHAP = {
     email: r => ({
       subjek: 'Pemberitahuan hasil sertifikasi',
       isi: 'Keputusan sertifikasi Anda: <b>' + esc_(r.rekomendasi.toUpperCase()) + '</b>.' + (r.link_surat_hasil ? '<br>Surat pemberitahuan hasil: <a href="' + esc_(r.link_surat_hasil) + '">unduh di sini</a>.' : '') +
-        '<br>Apabila tidak sepakat dengan keputusan ini, Anda berhak mengajukan banding melalui menu Banding Asesmen di SIPALING.'
+        '<br>Apabila tidak sepakat dengan keputusan ini, Anda berhak mengajukan banding melalui menu Banding Asesmen di SIPINTAR.'
     }),
     aksi: v => 'Hasil sertifikasi disampaikan: ' + v.rekomendasi,
     detail: v => v.catatan_hasil || ''
@@ -651,8 +651,8 @@ function seed_() {
     [
       ['nama_lsp', 'LSP Universitas Negeri Medan', 'Nama resmi LSP'],
       ['nama_singkat', 'LSP UNIMED', ''],
-      ['tagline', 'Sistem Informasi Pelayanan Sertifikasi Terintegrasi', ''],
-      ['deskripsi', 'SIPALING LSP UNIMED adalah pusat layanan digital sertifikasi kompetensi: informasi skema, pendaftaran, verifikasi, penjadwalan, hasil uji, hingga pelacakan sertifikat — profesional, objektif, transparan, terdokumentasi, dan mampu telusur.', ''],
+      ['tagline', 'Sistem Informasi Pemantauan dan Layanan Terintegrasi LSP Universitas Negeri Medan', ''],
+      ['deskripsi', 'SIPINTAR LSP UNIMED adalah pusat layanan digital sertifikasi kompetensi: informasi skema, pendaftaran, verifikasi, penjadwalan, hasil uji, hingga pelacakan sertifikat — profesional, objektif, transparan, terdokumentasi, dan mampu telusur.', ''],
       ['nomor_lisensi', '', 'Nomor lisensi BNSP'],
       ['alamat', 'Jl. William Iskandar Ps. V, Medan Estate, Deli Serdang, Sumatera Utara 20221', ''],
       ['email', 'lsp@unimed.ac.id', 'Ganti dengan email resmi'],
@@ -858,7 +858,7 @@ function publicView_(r) {
   };
 }
 
-/** Simpan berkas base64 ke Drive: SIPALING_UPLOADS/<no_reg>/<jenis>.<ext> */
+/** Simpan berkas base64 ke Drive: SIPINTAR_UPLOADS/<no_reg>/<jenis>.<ext> */
 function saveFile_(f, folderName, label) {
   if (!f || !f.data) return '';
   const ok = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png' };
@@ -877,7 +877,7 @@ function uploadRoot_() {
   const props = PropertiesService.getScriptProperties();
   const id = props.getProperty('upload_root');
   if (id) { try { return DriveApp.getFolderById(id); } catch (e) { /* folder terhapus → buat ulang */ } }
-  const f = DriveApp.createFolder('SIPALING_UPLOADS');
+  const f = DriveApp.createFolder('SIPINTAR_UPLOADS');
   props.setProperty('upload_root', f.getId());
   return f;
 }
@@ -903,7 +903,7 @@ function emailHtml_(r, isi) {
   const set = settings_();
   return '<div style="font-family:Arial,sans-serif;font-size:14px;color:#000;max-width:560px">' +
     '<p>Yth. ' + esc_(r.nama) + ',</p><p>' + isi + '</p>' +
-    '<p>No. Registrasi: <b>' + esc_(r.no_reg) + '</b><br>Pantau status Anda di SIPALING menggunakan No. Registrasi dan email ini.</p>' +
+    '<p>No. Registrasi: <b>' + esc_(r.no_reg) + '</b><br>Pantau status Anda di SIPINTAR menggunakan No. Registrasi dan email ini.</p>' +
     '<p>Hormat kami,<br>' + esc_(set.nama_lsp || 'LSP Universitas Negeri Medan') + '</p></div>';
 }
 
@@ -914,6 +914,6 @@ function buktiHtml_(b) {
     '<p>Yth. ' + esc_(b.nama) + ',</p><p>Permohonan sertifikasi kompetensi Anda telah kami terima. Simpan email ini sebagai <b>bukti pendaftaran</b>.</p>' +
     '<table style="border-collapse:collapse">' + row('No. Registrasi', b.no_reg) + row('Nama', b.nama) + row('NIK', b.nik) + row('Skema', b.skema) +
     row('Jadwal uji', b.tanggal + ' ' + (b.waktu || '')) + row('TUK', b.tuk) + row('Waktu daftar', b.waktu_daftar) + row('Status', b.status_verifikasi) + '</table>' +
-    '<p>Langkah berikutnya: dokumen Anda diverifikasi oleh Bagian Sertifikasi. Hasil verifikasi, jadwal final, asesor, dan TUK akan dikirim ke email ini dan dapat dipantau di SIPALING menu Status Permohonan.</p>' +
+    '<p>Langkah berikutnya: dokumen Anda diverifikasi oleh Bagian Sertifikasi. Hasil verifikasi, jadwal final, asesor, dan TUK akan dikirim ke email ini dan dapat dipantau di SIPINTAR menu Status Permohonan.</p>' +
     '<p>Hormat kami,<br>' + esc_(set.nama_lsp || 'LSP Universitas Negeri Medan') + '</p></div>';
 }

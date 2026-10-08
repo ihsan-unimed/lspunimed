@@ -1,4 +1,4 @@
-/* SIPALING LSP UNIMED — halaman layanan publik (asesi / pemohon) */
+/* SIPINTAR LSP UNIMED — halaman layanan publik (asesi / pemohon) */
 (function () {
   const { api, esc, $, $$, tgl, rupiah, badge, toast, loading, fileToPayload, formData, busy, copy, icon, guilloche, SOP, tahapPeserta, store, DEMO, CFG } = window.S;
 
@@ -63,7 +63,7 @@
 
   function footer(p) {
     $('#footer').innerHTML = `<div class="in">
-      <div><b>${esc(p.nama_lsp || 'LSP Universitas Negeri Medan')}</b>${esc(p.alamat || '')}${p.nomor_lisensi ? '<br>Lisensi BNSP ' + esc(p.nomor_lisensi) : ''}</div>
+      <div><b>SIPINTAR</b>Sistem Informasi Pemantauan dan Layanan Terintegrasi<br>${esc(p.nama_lsp || 'LSP Universitas Negeri Medan')}<br>${esc(p.alamat || '')}${p.nomor_lisensi ? '<br>Lisensi BNSP ' + esc(p.nomor_lisensi) : ''}</div>
       <div><b>Hubungi kami</b><ul>${p.email ? `<li><a href="mailto:${esc(p.email)}">${esc(p.email)}</a></li>` : ''}${p.telepon ? `<li>${esc(p.telepon)}</li>` : ''}${p.whatsapp ? `<li><a href="https://wa.me/${esc(p.whatsapp)}" target="_blank" rel="noopener">WhatsApp</a></li>` : ''}${p.jam_layanan ? `<li>${esc(p.jam_layanan)}</li>` : ''}</ul></div>
       <div><b>Tautan</b><ul><li><a href="#/alur">Alur layanan (SOP ${esc(SOP.nomor)})</a></li><li><a href="#/dokumen">Dokumen mutu</a></li><li><a href="#/keluhan">Sampaikan keluhan</a></li><li><a href="admin.html">Masuk petugas</a></li></ul></div></div>`;
   }
@@ -78,7 +78,7 @@
     $('#menuBtn').setAttribute('aria-expanded', 'false');
     window.scrollTo(0, 0);
     const info = INFO[page] || INFO.beranda;
-    document.title = (page === 'beranda' ? '' : info[0] + ' — ') + 'SIPALING LSP UNIMED';
+    document.title = (page === 'beranda' ? '' : info[0] + ' — ') + 'SIPINTAR LSP UNIMED';
     if (page === 'beranda') { root.innerHTML = loading(); view = root; }
     else {
       root.innerHTML = `<div class="page-head"><div class="crumb"><a href="#/beranda">Beranda</a> / ${esc(info[2] || '')}</div><h1>${esc(info[0])}</h1>${LEAD[page] ? `<p>${esc(LEAD[page])}</p>` : ''}</div><div class="page" id="pg">${loading()}</div>`;
@@ -118,14 +118,14 @@
       <h1>Bukti Pendaftaran Uji Kompetensi</h1><div>${esc(p.nama_lsp || 'LSP Universitas Negeri Medan')}</div>
       <div class="no">${esc(b.no_reg)}</div>
       <table>${buktiRows(b).map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td></tr>`).join('')}</table>
-      <p>Simpan bukti ini dan bawa saat asesmen bersama KTP asli. Hasil verifikasi, jadwal final, asesor, dan TUK dikirim ke email di atas dan dapat dipantau di SIPALING menu Status permohonan.</p>
+      <p>Simpan bukti ini dan bawa saat asesmen bersama KTP asli. Hasil verifikasi, jadwal final, asesor, dan TUK dikirim ke email di atas dan dapat dipantau di SIPINTAR menu Status permohonan.</p>
       <p>Dicetak ${tgl(new Date().toISOString().slice(0, 10))}</p><script>window.onload=function(){window.print()}<\/script></body></html>`);
     w.document.close();
   }
 
   /* ---------------- Komponen lookup peserta ---------------- */
   function lookupForm(id, judul, tombol) {
-    const last = JSON.parse(store.get('sipaling_lookup') || '{}');
+    const last = JSON.parse(store.get('sipintar_lookup') || '{}');
     return `<div class="card no-print"><p class="muted">${esc(judul)}: masukkan nomor registrasi dan email yang Anda pakai saat mendaftar.</p>
       <form class="form" id="${id}">
         <div class="row">
@@ -145,7 +145,7 @@
       try {
         const r = await api('lacak', d);
         LAST = r;
-        store.set('sipaling_lookup', JSON.stringify(d));
+        store.set('sipintar_lookup', JSON.stringify(d));
         out.innerHTML = render(r);
       } catch (e) { out.innerHTML = `<div class="notice bad">${esc(e.message)}</div>`; }
     };
@@ -179,7 +179,7 @@
     beranda(D) {
       const p = D.pengaturan, st = D.statistik;
       const next = D.jadwal.filter(j => j.bisa_daftar).slice(0, 4);
-      const last = JSON.parse(store.get('sipaling_lookup') || '{}');
+      const last = JSON.parse(store.get('sipintar_lookup') || '{}');
       root.innerHTML = `
       <section class="hero-wrap">${guilloche()}
         <div class="hero">
@@ -226,7 +226,7 @@
       </div>`;
       $('#fTrack').addEventListener('submit', (e) => {
         e.preventDefault();
-        store.set('sipaling_lookup', JSON.stringify(formData(e.target)));
+        store.set('sipintar_lookup', JSON.stringify(formData(e.target)));
         location.hash = '#/status';
       });
     },
@@ -242,7 +242,7 @@
           <dt>Acuan</dt><dd style="font-weight:500"><ol style="margin:0;padding-left:18px">${SOP.acuan.map(a => `<li>${esc(a)}</li>`).join('')}</ol></dd>
         </dl>
       </div>
-      <h2>Proses prosedur &amp; layanan di SIPALING</h2>
+      <h2>Proses prosedur &amp; layanan di SIPINTAR</h2>
       <div class="steps">${SOP.langkah.map(l => `
         <div class="step"><div class="num">${l.no}</div><div>
           <h3>${esc(l.nama)}</h3>
@@ -369,7 +369,7 @@
             d.files = {};
             for (const el of $$('input[type=file]', f)) if (el.files[0]) d.files[el.name] = await fileToPayload(el.files[0]);
             const r = await api('daftar', d);
-            store.set('sipaling_lookup', JSON.stringify({ no_reg: r.no_reg, email: d.email.toLowerCase() }));
+            store.set('sipintar_lookup', JSON.stringify({ no_reg: r.no_reg, email: d.email.toLowerCase() }));
             PD = null;
             view.innerHTML = `<div class="card"><div class="ticket"><div class="muted">Permohonan diterima. Nomor registrasi Anda:</div>
               <div class="no mono">${esc(r.no_reg)}</div><button class="btn sm ghost" id="cp">Salin nomor</button></div>
@@ -451,7 +451,7 @@
     rcc(D) { layananPage(D, 'rcc'); },
 
     keluhan() {
-      const last = JSON.parse(store.get('sipaling_lookup') || '{}');
+      const last = JSON.parse(store.get('sipintar_lookup') || '{}');
       view.innerHTML = `<div class="notice info">Keluhan dicatat, diberi nomor tiket, dan ditindaklanjuti oleh Bagian Manajemen Mutu sesuai prosedur penanganan keluhan (Langkah 9 SOP). Identitas pelapor dijaga kerahasiaannya.</div>
       <form class="card form" id="fK">
         <h2>Formulir keluhan pelayanan</h2>
@@ -492,7 +492,7 @@
     },
 
     survei() {
-      const last = JSON.parse(store.get('sipaling_lookup') || '{}');
+      const last = JSON.parse(store.get('sipintar_lookup') || '{}');
       const q = [['skor_informasi', 'Kejelasan informasi skema, biaya, dan jadwal'], ['skor_administrasi', 'Kemudahan pendaftaran & administrasi'], ['skor_asesmen', 'Pelaksanaan asesmen (adil, objektif, tepat waktu)'], ['skor_petugas', 'Sikap dan responsivitas petugas'], ['skor_keseluruhan', 'Kepuasan keseluruhan']];
       view.innerHTML = `<form class="card form" id="fS"><h2>Survei kepuasan pemohon sertifikasi</h2>
         <p class="muted">Skala 1 (sangat tidak puas) – 5 (sangat puas). Hasil survei digunakan untuk perbaikan mutu layanan.</p>
@@ -536,7 +536,7 @@
 
   function layananPage(D, key) {
     const L = LAYANAN[key];
-    const last = JSON.parse(store.get('sipaling_lookup') || '{}');
+    const last = JSON.parse(store.get('sipintar_lookup') || '{}');
     const field = (x) => {
       const [name, label, type] = x;
       if (type.indexOf('select:') === 0) return `<label class="f">${esc(label)}<select name="x_${name}"><option value="">Pilih…</option>${type.slice(7).split('|').map(o => `<option>${esc(o)}</option>`).join('')}</select></label>`;

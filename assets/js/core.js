@@ -1,6 +1,6 @@
-/* SIPALING LSP UNIMED — fungsi bersama (API, utilitas UI, data SOP) */
+/* SIPINTAR LSP UNIMED — fungsi bersama (API, utilitas UI, data SOP) */
 (function () {
-  const CFG = window.SIPALING_CONFIG || {};
+  const CFG = window.SIPINTAR_CONFIG || {};
   const DEMO = !CFG.API_URL;
 
   /* ---------------- Penyimpanan aman ---------------- */
@@ -12,8 +12,8 @@
 
   /* ---------------- API ---------------- */
   async function api(action, data = {}) {
-    const token = store.get('sipaling_token');
-    if (DEMO) return window.SIPALING_MOCK.call(action, data, token);
+    const token = store.get('sipintar_token');
+    if (DEMO) return window.SIPINTAR_MOCK.call(action, data, token);
     let res;
     try {
       res = await fetch(CFG.API_URL, {
@@ -27,7 +27,7 @@
     let j;
     try { j = await res.json(); } catch (e) { throw new Error('Respons server tidak valid. Pastikan Apps Script sudah di-deploy dengan akses "Siapa saja".'); }
     if (!j.ok) {
-      if (/Sesi berakhir/.test(j.error || '')) store.del('sipaling_token');
+      if (/Sesi berakhir/.test(j.error || '')) store.del('sipintar_token');
       throw new Error(j.error || 'Terjadi kesalahan.');
     }
     return j.data;

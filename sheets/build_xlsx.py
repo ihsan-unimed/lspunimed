@@ -1,4 +1,4 @@
-"""Membangun Database-SIPALING-LSP-UNIMED.xlsx (template untuk diunggah ke Google Drive → Google Sheets).
+"""Membangun Database-SIPINTAR-LSP-UNIMED.xlsx (template untuk diunggah ke Google Drive → Google Sheets).
 Urutan & nama kolom HARUS sama dengan SHEETS di backend/Code.gs."""
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -6,7 +6,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.comments import Comment
 import sys
 
-OUT = sys.argv[1] if len(sys.argv) > 1 else 'Database-SIPALING-LSP-UNIMED.xlsx'
+OUT = sys.argv[1] if len(sys.argv) > 1 else 'Database-SIPINTAR-LSP-UNIMED.xlsx'
 F = Font(name='Arial', size=10, color='000000')
 FB = Font(name='Arial', size=10, bold=True, color='000000')
 HEAD_FILL = PatternFill('solid', fgColor='D9DDE4')
@@ -81,7 +81,7 @@ for n in SHEETS: sheet(n)
 put(wb['Pengaturan'], [
   dict(kunci='nama_lsp', nilai='LSP Universitas Negeri Medan', keterangan='Nama resmi LSP'),
   dict(kunci='nama_singkat', nilai='LSP UNIMED', keterangan='Dipakai di subjek email'),
-  dict(kunci='tagline', nilai='Sistem Informasi Pelayanan Sertifikasi Terintegrasi', keterangan=''),
+  dict(kunci='tagline', nilai='Sistem Informasi Pemantauan dan Layanan Terintegrasi LSP Universitas Negeri Medan', keterangan=''),
   dict(kunci='deskripsi', nilai='Layanan digital sertifikasi kompetensi LSP Universitas Negeri Medan.', keterangan=''),
   dict(kunci='nomor_lisensi', nilai='', keterangan='Isi nomor lisensi BNSP'),
   dict(kunci='alamat', nilai='Jl. William Iskandar Ps. V, Medan Estate, Deli Serdang, Sumatera Utara 20221', keterangan='Periksa / sesuaikan'),
@@ -106,7 +106,7 @@ for i in range(1, 17):
 put(wb['Skema'], skema, fill_cols=('kode_skema', 'nama_skema', 'jumlah_unit', 'persyaratan'))
 dv(wb['Skema'], 'jenis_skema', ['KKNI', 'Okupasi', 'Klaster'])
 dv(wb['Skema'], 'status', ['Aktif', 'Nonaktif'])
-wb['Skema']['F2'].comment = Comment('Persyaratan berbeda per skema. Tulis satu persyaratan per baris (Alt+Enter di Excel / Ctrl+Enter di Google Sheets). Ditampilkan di halaman Skema dan di formulir pendaftaran.', 'SIPALING')
+wb['Skema']['F2'].comment = Comment('Persyaratan berbeda per skema. Tulis satu persyaratan per baris (Alt+Enter di Excel / Ctrl+Enter di Google Sheets). Ditampilkan di halaman Skema dan di formulir pendaftaran.', 'SIPINTAR')
 
 # ---------- TUK ----------
 put(wb['TUK'], [dict(id_tuk='TUK-001', nama_tuk='[Isi nama TUK, mis. TUK Sewaktu Fakultas Teknik]', jenis_tuk='Sewaktu', alamat='Universitas Negeri Medan', penanggung_jawab='', kontak='', status='Aktif')],
@@ -118,14 +118,14 @@ dv(wb['TUK'], 'status', ['Aktif', 'Nonaktif'])
 put(wb['Asesor'], [dict(id_asesor='ASR-001', nama_asesor='[Isi nama asesor]', no_reg_met='[No. Reg MET]', skema='SKM-001', email='', hp='', status='Aktif')],
     fill_cols=('nama_asesor', 'no_reg_met', 'skema'))
 dv(wb['Asesor'], 'status', ['Aktif', 'Nonaktif'])
-wb['Asesor']['D2'].comment = Comment('ID skema yang diampu, pisahkan koma. Contoh: SKM-001,SKM-004', 'SIPALING')
+wb['Asesor']['D2'].comment = Comment('ID skema yang diampu, pisahkan koma. Contoh: SKM-001,SKM-004', 'SIPINTAR')
 
 # ---------- Jadwal: 16 skema, 17 Oktober 2026 ----------
 put(wb['Jadwal'], [dict(id_jadwal=f'JDW-{i:03d}', id_skema=f'SKM-{i:03d}', tanggal='2026-10-17', waktu='08.00 WIB – selesai', id_tuk='TUK-001',
     kuota='0', batas_daftar='2026-10-14', status='Dibuka', keterangan='Uji kompetensi perdana') for i in range(1, 17)], fill_cols=('batas_daftar', 'id_tuk'))
 dv(wb['Jadwal'], 'status', ['Dibuka', 'Ditutup', 'Selesai'])
-wb['Jadwal']['F2'].comment = Comment('0 = tanpa batas. Kuota tidak ditampilkan di situs publik.', 'SIPALING')
-wb['Jadwal']['G2'].comment = Comment('Batas pendaftaran (format yyyy-mm-dd). Sesuaikan.', 'SIPALING')
+wb['Jadwal']['F2'].comment = Comment('0 = tanpa batas. Kuota tidak ditampilkan di situs publik.', 'SIPINTAR')
+wb['Jadwal']['G2'].comment = Comment('Batas pendaftaran (format yyyy-mm-dd). Sesuaikan.', 'SIPINTAR')
 
 # ---------- Dokumen: umum + per skema ----------
 dok = [
@@ -142,8 +142,8 @@ for i in range(1, 17):
 put(wb['Dokumen'], [dict(id_dok=f'DOK-{k:03d}', nomor=a, judul=b, kategori=c, id_skema=d, link='', status='Aktif') for k, (a, b, c, d) in enumerate(dok, 1)], fill_cols=('link',))
 dv(wb['Dokumen'], 'kategori', ['SOP', 'Acuan', 'Formulir', 'Skema', 'Panduan', 'Lainnya'])
 dv(wb['Dokumen'], 'status', ['Aktif', 'Nonaktif'])
-wb['Dokumen']['E2'].comment = Comment('Kosong = dokumen umum (semua skema). Isi ID skema (mis. SKM-003) untuk formulir khusus skema.', 'SIPALING')
-wb['Dokumen']['F2'].comment = Comment('Link Google Drive dengan akses "Siapa saja yang memiliki link".', 'SIPALING')
+wb['Dokumen']['E2'].comment = Comment('Kosong = dokumen umum (semua skema). Isi ID skema (mis. SKM-003) untuk formulir khusus skema.', 'SIPINTAR')
+wb['Dokumen']['F2'].comment = Comment('Link Google Drive dengan akses "Siapa saja yang memiliki link".', 'SIPINTAR')
 
 # ---------- Validasi sheet transaksi ----------
 P = wb['Pendaftaran']
@@ -158,7 +158,7 @@ dv(wb['Pengguna'], 'aktif', ['YA', 'TIDAK'])
 
 # ---------- Petunjuk ----------
 lines = [
-  ('Database SIPALING LSP UNIMED', True),
+  ('Database SIPINTAR LSP UNIMED', True),
   ('Basis data layanan sertifikasi untuk penyaksian uji kompetensi BNSP. Dibaca dan ditulis oleh Apps Script (Code.gs).', False),
   ('', False),
   ('Cara memasang', True),
