@@ -264,7 +264,7 @@
           const jd = D.jadwal.filter(j => j.id_skema === s.id_skema && j.bisa_daftar).length;
           return `<div class="skema-item" id="sk-${esc(s.id_skema)}"><div>
             ${s.kode_skema ? `<div class="code">${esc(s.kode_skema)}</div>` : ''}<h3>${esc(s.nama_skema)}</h3>
-            <div class="facts"><span>${esc(s.jenis_skema || 'Skema')}</span><span>${esc(s.jumlah_unit || '-')} unit kompetensi</span><span>Biaya: ${rupiah(s.biaya)}</span></div>
+            <div class="facts"><span>${esc(s.jenis_skema || 'Skema')}</span>${s.jumlah_unit ? `<span>${esc(s.jumlah_unit)} unit kompetensi</span>` : ''}${String(s.biaya || '') !== '' ? `<span>Biaya: ${rupiah(s.biaya)}</span>` : ''}</div>
             ${s.persyaratan ? `<div style="margin-top:8px;font-weight:600;font-size:.9rem">Persyaratan skema</div><ul>${String(s.persyaratan).split(/\n+/).filter(String).map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>
             <div class="act"><a class="btn sm ${jd ? '' : 'ghost'}" href="#/jadwal/${esc(s.id_skema)}">${jd ? jd + ' jadwal dibuka' : 'Lihat jadwal'}</a>
             <a class="btn sm ghost" href="#/dokumen/${esc(s.id_skema)}">${icon('file')} Formulir skema</a>

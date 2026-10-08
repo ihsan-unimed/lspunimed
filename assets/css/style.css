@@ -377,3 +377,4 @@ details.card summary { cursor: pointer; list-style: revert; }
 .step .meta .badge { white-space: normal; }
 @media (max-width: 600px) { .steps::before { left: 15px; } .step { grid-template-columns: 32px minmax(0, 1fr); gap: 12px; } .step .num { width: 32px; height: 32px; font-size: .9rem; } }
 td.mono { white-space: nowrap; }
+.skema-item { scroll-margin-top: 84px; }

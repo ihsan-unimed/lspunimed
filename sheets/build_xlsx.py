@@ -4,7 +4,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.comments import Comment
-import sys
+import sys, json, os
+DATA = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data_lsp.json'), encoding='utf-8'))
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else 'Database-SIPINTAR-LSP-UNIMED.xlsx'
 F = Font(name='Arial', size=10, color='000000')
@@ -85,7 +86,7 @@ put(wb['Pengaturan'], [
   dict(kunci='deskripsi', nilai='Layanan digital sertifikasi kompetensi LSP Universitas Negeri Medan.', keterangan=''),
   dict(kunci='nomor_lisensi', nilai='', keterangan='Isi nomor lisensi BNSP'),
   dict(kunci='alamat', nilai='Jl. William Iskandar Ps. V, Medan Estate, Deli Serdang, Sumatera Utara 20221', keterangan='Periksa / sesuaikan'),
-  dict(kunci='email', nilai='', keterangan='Email resmi LSP (juga alamat balasan email otomatis)'),
+  dict(kunci='email', nilai='lspunimed@unimed.ac.id', keterangan='Email resmi LSP (juga alamat balasan email otomatis)'),
   dict(kunci='telepon', nilai='', keterangan=''),
   dict(kunci='whatsapp', nilai='', keterangan='Format 62812xxxx (tanpa + dan spasi)'),
   dict(kunci='jam_layanan', nilai='Senin–Jumat, 08.00–16.00 WIB', keterangan=''),
@@ -94,35 +95,33 @@ put(wb['Pengaturan'], [
   dict(kunci='kirim_email', nilai='YA', keterangan='YA = kirim email otomatis (bukti daftar, verifikasi, jadwal, hasil, sertifikat siap). TIDAK = matikan'),
   dict(kunci='info_pengambilan_sertifikat', nilai='Sertifikat diambil di Sekretariat LSP pada jam layanan dengan membawa KTP asli. Pengambilan oleh orang lain wajib membawa surat kuasa.', keterangan=''),
 ], fill_cols=())
-for r in (6, 7, 8):
+for r in (6, 9):
     wb['Pengaturan'].cell(row=r, column=2).fill = ISI_FILL
 
-# ---------- Skema (16) ----------
-skema = []
-for i in range(1, 17):
-    skema.append(dict(id_skema=f'SKM-{i:03d}', kode_skema='', nama_skema=f'[Isi nama skema {i:02d}]', jenis_skema='Okupasi', jumlah_unit='',
-        persyaratan='[Isi persyaratan khusus skema ini, satu per baris]\nContoh: Mahasiswa aktif minimal semester 5 Prodi ...\nContoh: Telah lulus mata kuliah ...\nContoh: Melampirkan sertifikat pelatihan / surat keterangan magang',
-        biaya='0', link_dokumen='', status='Aktif'))
-put(wb['Skema'], skema, fill_cols=('kode_skema', 'nama_skema', 'jumlah_unit', 'persyaratan'))
+# ---------- Skema (16) dari dokumen skema bagian 9.1.2 ----------
+SK = DATA['skema']
+put(wb['Skema'], [dict(id_skema=f'SKM-{i:03d}', kode_skema='', nama_skema=k['nama'], jenis_skema=k['jenis'], jumlah_unit='',
+    persyaratan='\n'.join(k['syarat']), biaya='', link_dokumen='', status='Aktif') for i, k in enumerate(SK, 1)], fill_cols=('kode_skema', 'jumlah_unit'))
 dv(wb['Skema'], 'jenis_skema', ['KKNI', 'Okupasi', 'Klaster'])
 dv(wb['Skema'], 'status', ['Aktif', 'Nonaktif'])
-wb['Skema']['F2'].comment = Comment('Persyaratan berbeda per skema. Tulis satu persyaratan per baris (Alt+Enter di Excel / Ctrl+Enter di Google Sheets). Ditampilkan di halaman Skema dan di formulir pendaftaran.', 'SIPINTAR')
+wb['Skema']['F2'].comment = Comment('Persyaratan diambil dari bagian 9.1.2 dokumen skema. Satu persyaratan per baris (Alt+Enter di Excel / Ctrl+Enter di Google Sheets).', 'SIPINTAR')
+for i, k in enumerate(SK, 2):
+    if k.get('catatan'):
+        c = wb['Skema'].cell(row=i, column=6); c.fill = ISI_FILL; c.comment = Comment(k['catatan'], 'SIPINTAR')
 
-# ---------- TUK ----------
-put(wb['TUK'], [dict(id_tuk='TUK-001', nama_tuk='[Isi nama TUK, mis. TUK Sewaktu Fakultas Teknik]', jenis_tuk='Sewaktu', alamat='Universitas Negeri Medan', penanggung_jawab='', kontak='', status='Aktif')],
-    fill_cols=('nama_tuk', 'alamat', 'penanggung_jawab'))
+# ---------- TUK (surat 071/LSP-UNIMED/X/2026) ----------
+put(wb['TUK'], [dict(id_tuk=t[0], nama_tuk=t[1], jenis_tuk='Sewaktu', alamat='Universitas Negeri Medan', penanggung_jawab=t[2], kontak='', status='Aktif') for t in DATA['tuk']])
 dv(wb['TUK'], 'jenis_tuk', ['Sewaktu', 'Tempat Kerja', 'Mandiri'])
 dv(wb['TUK'], 'status', ['Aktif', 'Nonaktif'])
 
-# ---------- Asesor ----------
-put(wb['Asesor'], [dict(id_asesor='ASR-001', nama_asesor='[Isi nama asesor]', no_reg_met='[No. Reg MET]', skema='SKM-001', email='', hp='', status='Aktif')],
-    fill_cols=('nama_asesor', 'no_reg_met', 'skema'))
+# ---------- Asesor (surat 071/LSP-UNIMED/X/2026) ----------
+put(wb['Asesor'], [dict(id_asesor=f'ASR-{i:03d}', nama_asesor=k['asesor'][0], no_reg_met='MET.' + k['asesor'][1], skema=f'SKM-{i:03d}', email='', hp='', status='Aktif') for i, k in enumerate(SK, 1)])
 dv(wb['Asesor'], 'status', ['Aktif', 'Nonaktif'])
 wb['Asesor']['D2'].comment = Comment('ID skema yang diampu, pisahkan koma. Contoh: SKM-001,SKM-004', 'SIPINTAR')
 
 # ---------- Jadwal: 16 skema, 17 Oktober 2026 ----------
-put(wb['Jadwal'], [dict(id_jadwal=f'JDW-{i:03d}', id_skema=f'SKM-{i:03d}', tanggal='2026-10-17', waktu='08.00 WIB – selesai', id_tuk='TUK-001',
-    kuota='0', batas_daftar='2026-10-14', status='Dibuka', keterangan='Uji kompetensi perdana') for i in range(1, 17)], fill_cols=('batas_daftar', 'id_tuk'))
+put(wb['Jadwal'], [dict(id_jadwal=f'JDW-{i:03d}', id_skema=f'SKM-{i:03d}', tanggal='2026-10-17', waktu='08.00 WIB – selesai', id_tuk=k['tuk'],
+    kuota='0', batas_daftar='2026-10-14', status='Dibuka', keterangan='Uji kompetensi perdana (penyaksian BNSP)') for i, k in enumerate(SK, 1)], fill_cols=('batas_daftar',))
 dv(wb['Jadwal'], 'status', ['Dibuka', 'Ditutup', 'Selesai'])
 wb['Jadwal']['F2'].comment = Comment('0 = tanpa batas. Kuota tidak ditampilkan di situs publik.', 'SIPINTAR')
 wb['Jadwal']['G2'].comment = Comment('Batas pendaftaran (format yyyy-mm-dd). Sesuaikan.', 'SIPINTAR')
@@ -136,9 +135,9 @@ dok = [
   ('ISO/IEC 17024:2012', 'Conformity Assessment – General Requirements for Bodies Operating Certification of Persons', 'Acuan', ''),
   ('FR.APL.01', 'Formulir Permohonan Sertifikasi Kompetensi', 'Formulir', ''),
 ]
-for i in range(1, 17):
-    dok.append(('FR.APL.02', f'Asesmen Mandiri (APL-02) — skema {i:02d}', 'Formulir', f'SKM-{i:03d}'))
-    dok.append(('Skema', f'Dokumen skema sertifikasi {i:02d}', 'Skema', f'SKM-{i:03d}'))
+for i, k in enumerate(SK, 1):
+    dok.append(('FR.APL.02', 'Asesmen Mandiri (APL-02) — ' + k['nama'], 'Formulir', f'SKM-{i:03d}'))
+    dok.append(('FR.SKEMA-02', 'Skema Sertifikasi ' + k['nama'], 'Skema', f'SKM-{i:03d}'))
 put(wb['Dokumen'], [dict(id_dok=f'DOK-{k:03d}', nomor=a, judul=b, kategori=c, id_skema=d, link='', status='Aktif') for k, (a, b, c, d) in enumerate(dok, 1)], fill_cols=('link',))
 dv(wb['Dokumen'], 'kategori', ['SOP', 'Acuan', 'Formulir', 'Skema', 'Panduan', 'Lainnya'])
 dv(wb['Dokumen'], 'status', ['Aktif', 'Nonaktif'])
@@ -168,9 +167,9 @@ lines = [
   ('4. Terapkan → Deployment baru → Aplikasi web (Jalankan sebagai: Saya, Akses: Siapa saja). Salin URL /exec ke assets/js/config.js.', False),
   ('', False),
   ('Yang wajib diisi sebelum dipakai (sel berwarna kuning)', True),
-  ('Skema: kode, nama resmi, jumlah unit, dan persyaratan khusus tiap skema (satu persyaratan per baris).', False),
-  ('Jadwal: 16 jadwal sudah disiapkan untuk 17 Oktober 2026. Periksa batas_daftar dan TUK.', False),
-  ('TUK dan Asesor: nama, No. Reg MET, dan ID skema yang diampu.', False),
+  ('Skema: 16 skema dan persyaratannya sudah diisi dari bagian 9.1.2 dokumen skema. Lengkapi kode skema dan jumlah unit; periksa sel persyaratan berwarna kuning (ada catatan).', False),
+  ('Jadwal: 16 jadwal sudah disiapkan untuk 17 Oktober 2026 dengan TUK sesuai surat 071/LSP-UNIMED/X/2026. Periksa batas_daftar.', False),
+  ('TUK dan Asesor: sudah diisi dari surat 071/LSP-UNIMED/X/2026. Lengkapi email/HP bila perlu.', False),
   ('Dokumen: link Google Drive untuk SOP, APL-01, dan APL-02 per skema (akses "Siapa saja yang memiliki link").', False),
   ('Pengaturan: nomor lisensi, email resmi, telepon.', False),
   ('', False),

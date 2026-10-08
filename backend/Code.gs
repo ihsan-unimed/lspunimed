@@ -655,7 +655,7 @@ function seed_() {
       ['deskripsi', 'SIPINTAR LSP UNIMED adalah pusat layanan digital sertifikasi kompetensi: informasi skema, pendaftaran, verifikasi, penjadwalan, hasil uji, hingga pelacakan sertifikat — profesional, objektif, transparan, terdokumentasi, dan mampu telusur.', ''],
       ['nomor_lisensi', '', 'Nomor lisensi BNSP'],
       ['alamat', 'Jl. William Iskandar Ps. V, Medan Estate, Deli Serdang, Sumatera Utara 20221', ''],
-      ['email', 'lsp@unimed.ac.id', 'Ganti dengan email resmi'],
+      ['email', 'lspunimed@unimed.ac.id', 'Email resmi LSP'],
       ['telepon', '', ''],
       ['whatsapp', '', 'Format 62812xxxx'],
       ['jam_layanan', 'Senin–Jumat, 08.00–16.00 WIB', ''],

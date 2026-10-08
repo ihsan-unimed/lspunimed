@@ -1,7 +1,8 @@
 /* MODE DEMO — tiruan backend di browser. Aktif hanya jika API_URL di config.js kosong.
    Data contoh disimpan di localStorage browser ini saja. Akun demo: admin / demo12345 */
 (function () {
-  const KEY = 'sipintar_demo_db_v2';
+  const KEY = 'sipintar_demo_db_v3';
+  const SEED = window.SIPINTAR_SEED || { skema: [], tuk: [] };
   const pad = (n, w) => String(n).padStart(w, '0');
   const now = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2) + ' ' + pad(d.getHours(), 2) + ':' + pad(d.getMinutes(), 2) + ':' + pad(d.getSeconds(), 2); };
   const plus = (days) => { const d = new Date(); d.setDate(d.getDate() + days); return d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2); };
@@ -15,31 +16,20 @@
         nama_lsp: 'LSP Universitas Negeri Medan', nama_singkat: 'LSP UNIMED',
         tagline: 'Sistem Informasi Pemantauan dan Layanan Terintegrasi LSP Universitas Negeri Medan',
         deskripsi: 'SIPINTAR LSP UNIMED adalah pusat layanan digital sertifikasi kompetensi: informasi skema, pendaftaran, verifikasi, penjadwalan, hasil uji, hingga pelacakan sertifikat — profesional, objektif, transparan, terdokumentasi, dan mampu telusur.',
-        nomor_lisensi: '(contoh) BNSP-LSP-xxxx-ID', alamat: 'Jl. William Iskandar Ps. V, Medan Estate, Deli Serdang, Sumatera Utara 20221',
-        email: 'lsp@unimed.ac.id', telepon: '', whatsapp: '', jam_layanan: 'Senin–Jumat, 08.00–16.00 WIB',
+        nomor_lisensi: '', alamat: 'Jl. William Iskandar Ps. V, Medan Estate, Deli Serdang, Sumatera Utara 20221',
+        email: 'lspunimed@unimed.ac.id', telepon: '', whatsapp: '', jam_layanan: 'Senin–Jumat, 08.00–16.00 WIB',
         pengumuman: 'Pelaksanaan Uji Kompetensi perdana untuk 16 skema dilaksanakan pada Sabtu, 17 Oktober 2026. Informasi resmi dikirim ke email yang Anda daftarkan.',
         link_template_apl02: '', info_pengambilan_sertifikat: 'Sertifikat diambil di Sekretariat LSP pada jam layanan dengan membawa KTP asli. Pengambilan oleh orang lain wajib membawa surat kuasa.'
       },
-      Skema: Array.from({ length: 16 }, (_, i) => ({
-        id_skema: 'SKM-' + pad(i + 1, 3), kode_skema: 'SKM-UNIMED-' + pad(i + 1, 2), nama_skema: 'Skema Sertifikasi ' + pad(i + 1, 2) + ' (contoh)',
-        jenis_skema: i % 3 === 0 ? 'Klaster' : 'Okupasi', jumlah_unit: String(4 + (i % 6)),
-        persyaratan: ['Mahasiswa aktif minimal semester ' + (3 + (i % 4)) + ' atau alumni program studi terkait',
-          'Telah lulus mata kuliah pendukung skema ' + pad(i + 1, 2),
-          i % 2 ? 'Melampirkan surat keterangan magang/PKL' : 'Melampirkan sertifikat pelatihan yang relevan',
-          'Mengisi FR.APL.01 dan FR.APL.02 skema ' + pad(i + 1, 2)].join('\n'),
-        biaya: '0', link_dokumen: '', status: 'Aktif'
+      Skema: SEED.skema.map((k, i) => ({
+        id_skema: 'SKM-' + pad(i + 1, 3), kode_skema: '', nama_skema: k.nama, jenis_skema: k.jenis, jumlah_unit: '',
+        persyaratan: k.syarat.join('\n'), biaya: '', link_dokumen: '', status: 'Aktif'
       })),
-      TUK: [
-        { id_tuk: 'TUK-001', nama_tuk: 'TUK Sewaktu Lab. CAD FT Unimed', jenis_tuk: 'Sewaktu', alamat: 'Gedung Fakultas Teknik, Unimed', penanggung_jawab: 'Kepala Lab CAD', kontak: '', status: 'Aktif' },
-        { id_tuk: 'TUK-002', nama_tuk: 'TUK Sewaktu Workshop Pemesinan', jenis_tuk: 'Sewaktu', alamat: 'Workshop Teknik Mesin, Unimed', penanggung_jawab: 'Kepala Workshop', kontak: '', status: 'Aktif' }
-      ],
-      Asesor: [
-        { id_asesor: 'ASR-001', nama_asesor: 'Asesor Contoh A, M.T.', no_reg_met: 'MET.000.000001 2026', skema: 'SKM-001,SKM-003', email: '', hp: '', status: 'Aktif' },
-        { id_asesor: 'ASR-002', nama_asesor: 'Asesor Contoh B, M.Pd.', no_reg_met: 'MET.000.000002 2026', skema: 'SKM-002', email: '', hp: '', status: 'Aktif' }
-      ],
-      Jadwal: Array.from({ length: 16 }, (_, i) => ({
+      TUK: SEED.tuk.map(t => ({ id_tuk: t[0], nama_tuk: t[1], jenis_tuk: 'Sewaktu', alamat: 'Universitas Negeri Medan', penanggung_jawab: t[2], kontak: '', status: 'Aktif' })),
+      Asesor: SEED.skema.map((k, i) => ({ id_asesor: 'ASR-' + pad(i + 1, 3), nama_asesor: k.asesor[0], no_reg_met: 'MET.' + k.asesor[1], skema: 'SKM-' + pad(i + 1, 3), email: '', hp: '', status: 'Aktif' })),
+      Jadwal: SEED.skema.map((k, i) => ({
         id_jadwal: 'JDW-' + pad(i + 1, 3), id_skema: 'SKM-' + pad(i + 1, 3), tanggal: '2026-10-17', waktu: '08.00 WIB – selesai',
-        id_tuk: i % 2 ? 'TUK-002' : 'TUK-001', kuota: '0', batas_daftar: '2026-10-14', status: 'Dibuka', keterangan: 'Uji kompetensi perdana'
+        id_tuk: k.tuk, kuota: '0', batas_daftar: '2026-10-14', status: 'Dibuka', keterangan: 'Uji kompetensi perdana (penyaksian BNSP)'
       })),
       Pendaftaran: [],
       Keluhan: [], Layanan: [], Survei: [], Log: [],
@@ -48,13 +38,13 @@
         { id_dok: 'DOK-002', nomor: 'PBNSP 201', judul: 'Persyaratan Umum Lembaga Sertifikasi Profesi', kategori: 'Acuan', id_skema: '', link: '', status: 'Aktif' },
         { id_dok: 'DOK-003', nomor: 'PBNSP 202', judul: 'Pelaksanaan Sertifikasi Kompetensi', kategori: 'Acuan', id_skema: '', link: '', status: 'Aktif' },
         { id_dok: 'DOK-004', nomor: 'FR.APL.01', judul: 'Formulir Permohonan Sertifikasi Kompetensi', kategori: 'Formulir', id_skema: '', link: '', status: 'Aktif' }
-      ].concat(Array.from({ length: 16 }, (_, i) => ({ id_dok: 'DOK-' + pad(5 + i, 3), nomor: 'FR.APL.02', judul: 'Asesmen Mandiri (APL-02) — Skema ' + pad(i + 1, 2), kategori: 'Formulir', id_skema: 'SKM-' + pad(i + 1, 3), link: '', status: 'Aktif' }))),
+      ].concat(SEED.skema.map((k, i) => ({ id_dok: 'DOK-' + pad(5 + i, 3), nomor: 'FR.APL.02', judul: 'Asesmen Mandiri (APL-02) — ' + k.nama, kategori: 'Formulir', id_skema: 'SKM-' + pad(i + 1, 3), link: '', status: 'Aktif' }))),
       Pengguna: [{ username: 'admin', nama: 'Administrator (Demo)', peran: 'Admin', password: 'demo12345', aktif: 'YA' }]
     };
     // contoh peserta di berbagai tahap
     const contoh = [
-      ['Andi Pratama', 'JDW-001', { status_verifikasi: 'Memenuhi Syarat', status_jadwal: 'Terjadwal', id_asesor: 'ASR-001', id_tuk: 'TUK-001', tanggal_asesmen: '2026-10-17', waktu_asesmen: '08.00 WIB', status_asesmen: 'Dokumen Siap' }],
-      ['Siti Rahmawati', 'JDW-001', { status_verifikasi: 'Memenuhi Syarat', status_jadwal: 'Terjadwal', id_asesor: 'ASR-001', id_tuk: 'TUK-001', tanggal_asesmen: '2026-10-17', waktu_asesmen: '08.00 WIB' }],
+      ['Andi Pratama', 'JDW-001', { status_verifikasi: 'Memenuhi Syarat', status_jadwal: 'Terjadwal', id_asesor: 'ASR-001', id_tuk: 'TUK-009', tanggal_asesmen: '2026-10-17', waktu_asesmen: '08.00 WIB', status_asesmen: 'Dokumen Siap' }],
+      ['Siti Rahmawati', 'JDW-001', { status_verifikasi: 'Memenuhi Syarat', status_jadwal: 'Terjadwal', id_asesor: 'ASR-001', id_tuk: 'TUK-009', tanggal_asesmen: '2026-10-17', waktu_asesmen: '08.00 WIB' }],
       ['Budi Santoso', 'JDW-002', { status_verifikasi: 'Memenuhi Syarat' }],
       ['Dewi Lestari', 'JDW-003', { status_verifikasi: 'Menunggu Verifikasi' }],
       ['Rizky Hidayat', 'JDW-002', { status_verifikasi: 'Perlu Perbaikan', catatan_verifikasi: 'Transkrip belum dilegalisir.' }]
